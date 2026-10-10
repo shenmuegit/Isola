@@ -1,0 +1,32 @@
+.isola-stack, .isola-columns {
+  display: flex;
+  gap: 1rem;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+.isola-stack { flex-direction: column; }
+.isola-columns { flex-direction: row; flex-wrap: wrap; }
+.isola-pane {
+  box-sizing: border-box;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  overflow: auto;
+}
+.isola-columns > .isola-pane { flex-basis: 20rem; flex-grow: 1; flex-shrink: 1; }
+/* Pane sizing only applies on the Columns horizontal axis. */
+.isola-stack > .isola-pane { flex: none !important; }
+.isola-list-detail { container-type: inline-size; min-inline-size: 0; }
+.isola-list-detail-panes { display: flex; gap: 1rem; }
+.isola-list, .isola-detail { flex: 1 1 0; min-inline-size: 0; overflow: auto; }
+.isola-back { display: none; }
+@container (width < 48rem) {
+  .isola-list-detail-panes { display: block; }
+  .isola-back { display: block; }
+  .isola-list-detail[data-selected="true"] .isola-list,
+  .isola-list-detail[data-selected="false"] .isola-detail { display: none; }
+}
+.isola-pane :where(input, textarea, select, button),
+.isola-list-detail :where(input, textarea, select, button) {
+  box-sizing: border-box;
+  max-inline-size: 100%;
+}

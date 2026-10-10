@@ -5,7 +5,11 @@
     "moduleResolution": "NodeNext",
     "strict": true,
     "verbatimModuleSyntax": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "paths": {
+      "@isola/plugin": ["./packages/plugin/src/index.ts"],
+      "@isola/plugin/ui": ["./packages/plugin/src/ui.tsx"]
+    }
   },
   "exclude": ["**/node_modules", "**/dist", "**/build", "**/target", ".superpowers"]
 }

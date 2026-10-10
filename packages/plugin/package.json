@@ -2,12 +2,27 @@
   "name": "@isola/plugin",
   "version": "0.1.0",
   "type": "module",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "exports": {
+    "./ui": {
+      "types": "./dist/ui.d.ts",
+      "import": "./dist/ui.js"
+    },
+    "./styles.css": { "types": "./dist/styles.d.ts", "default": "./dist/styles.css" },
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     }
   },
-  "scripts": { "build": "tsc -p tsconfig.json" }
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node -e \"for (const file of ['styles.css', 'styles.d.ts']) require('node:fs').copyFileSync('src/' + file, 'dist/' + file)\""
+  },
+  "devDependencies": {
+    "react": "19.3.0"
+  },
+  "peerDependencies": {
+    "react": "^19.3.0"
+  }
 }

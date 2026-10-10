@@ -6,6 +6,8 @@ import {
   type PluginManifest,
   type RequestOptions,
 } from '../src/index.js';
+import { createElement } from 'react';
+import { Columns, Stack, Pane, ListDetail, type PaneProps, type ColumnsProps } from '../src/ui.js';
 
 const manifest: PluginManifest = {
   name: '@isola/notes',
@@ -55,3 +57,20 @@ async function useClient(client: PluginClient): Promise<string> {
 }
 
 void [manifestSchema, wrongVersion, clientSelection, messages, useClient];
+
+const layouts = createElement(Stack, { gap: '1rem', children: createElement(Columns, {
+  gap: 24,
+  children: [createElement(Pane, { key: 'editor', label: '编辑', flexBasis: 480, flexGrow: 2, children: createElement(Stack, { children: '内容' }) })],
+}) });
+const optionalDetail = createElement(ListDetail, { list: '列表', detail: layouts, hasSelection: true, onBack: () => {} });
+const noClientPane: PaneProps = {
+  label: '区域', children: null,
+  // @ts-expect-error Plugins do not select a client-specific layout.
+  client: 'iphone',
+};
+const noBreakpoint: ColumnsProps = {
+  children: null,
+  // @ts-expect-error Layout follows its container, not a plugin-defined device breakpoint.
+  breakpoint: 768,
+};
+void [optionalDetail, noClientPane, noBreakpoint];
