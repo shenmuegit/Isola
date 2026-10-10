@@ -26,7 +26,13 @@ export async function buildApp({ db, dataDir, origin }: { db: Pool; dataDir: str
     const result = await db.query<Pick<PublishedRelease, 'id' | 'manifest'>>('SELECT id, manifest FROM releases ORDER BY plugin_name, version');
     return result.rows.map(release => ({ ...release, entryUrl: releaseEntryUrl(release.id) }));
   });
-  await app.register(fastifyStatic, { root: resolve(dataDir), serve: false });
+  await app.register(fastifyStatic, {
+    root: resolve(dataDir), serve: false,
+    setHeaders(reply) {
+      reply.header('content-security-policy', 'sandbox allow-scripts');
+      reply.header('access-control-allow-origin', '*');
+    },
+  });
   app.get<{ Params: { releaseId: string; '*': string } }>('/plugins/:releaseId/*', {
     schema: { params: { type: 'object', properties: { releaseId: { type: 'string', format: 'uuid' }, '*': { type: 'string' } }, required: ['releaseId', '*'] } },
   }, async (request, reply) => {
@@ -34,8 +40,6 @@ export async function buildApp({ db, dataDir, origin }: { db: Pool; dataDir: str
     if (!asset.startsWith('dist/')) return reply.status(404).send({ message: 'Not found' });
     const result = await db.query('SELECT id FROM releases WHERE id = $1', [releaseId]);
     if (!result.rowCount) return reply.status(404).send({ message: 'Not found' });
-    reply.header('access-control-allow-origin', '*');
-    if (/\.html?$/i.test(asset)) reply.header('content-security-policy', 'sandbox allow-scripts');
     return reply.sendFile(asset.slice(5), join(resolve(dataDir), releaseId, 'package/dist'));
   });
   return app;

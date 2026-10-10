@@ -77,14 +77,27 @@ test('a real npm package publishes readable sandbox HTML and CORS-enabled module
   assert.equal(module.statusCode, 200);
   assert.match(module.headers['content-type']!, /javascript/);
   assert.equal(module.headers['access-control-allow-origin'], '*');
+  assert.equal(module.headers['content-security-policy'], 'sandbox allow-scripts');
   const styles = await app.inject({ url: entryUrl.replace('index.html', 'style.css') });
   assert.equal(styles.statusCode, 200);
   assert.match(styles.headers['content-type']!, /css/);
+  assert.equal(styles.headers['content-security-policy'], 'sandbox allow-scripts');
   const listed = await app.inject({ url: '/api/market/releases', headers: { origin: 'null' } });
   assert.equal(listed.statusCode, 200);
   assert.equal(listed.headers['access-control-allow-origin'], undefined);
+  assert.equal(listed.headers['content-security-policy'], undefined);
   assert.ok(listed.json().some((item: { id: string }) => item.id === release.id));
 });
+
+for (const [asset, contentType] of [['', 'text/html'], ['nested/', 'text/html'], ['image.svg', 'image/svg+xml']] as const) {
+  test(`published asset ${asset || 'directory index'} keeps the sandbox after native resource resolution`, async () => {
+    const response = await app.inject({ url: entryUrl.replace('index.html', asset), headers: { origin: 'null' } });
+    assert.equal(response.statusCode, 200, response.body);
+    assert.ok(response.headers['content-type']?.startsWith(contentType));
+    assert.equal(response.headers['content-security-policy'], 'sandbox allow-scripts');
+    assert.equal(response.headers['access-control-allow-origin'], '*');
+  });
+}
 
 test('duplicate releases return 409 and only the original publisher can release a new version', async () => {
   assert.equal((await publish(valid)).statusCode, 409);

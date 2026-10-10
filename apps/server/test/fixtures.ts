@@ -36,6 +36,9 @@ export async function npmPackage(value: unknown = manifest, entry = true) {
       await writeFile(join(directory, 'dist/index.html'), '<!doctype html><script type="module" src="./main.js"></script><h1>Notes</h1>');
       await writeFile(join(directory, 'dist/main.js'), 'export const title = "Notes";');
       await writeFile(join(directory, 'dist/style.css'), 'body { color: blue; }');
+      await mkdir(join(directory, 'dist/nested'));
+      await writeFile(join(directory, 'dist/nested/index.html'), '<!doctype html><h1>Nested</h1>');
+      await writeFile(join(directory, 'dist/image.svg'), '<svg xmlns="http://www.w3.org/2000/svg" onload="window.activeSvg = true"></svg>');
     }
     const npm = join(dirname(process.execPath), process.platform === 'win32' ? 'node_modules/npm/bin/npm-cli.js' : '../lib/node_modules/npm/bin/npm-cli.js');
     const { stdout } = await promisify(execFile)(process.execPath, [npm, 'pack', '--json', '--ignore-scripts'], { cwd: directory });
