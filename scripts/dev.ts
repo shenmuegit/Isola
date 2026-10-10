@@ -27,13 +27,17 @@ async function execute(file: string, args: string[]) {
 const run = (...args: string[]) => execute(process.execPath, [pnpm, ...args]);
 function close() { return shutdown ??= (async () => {
   controller.abort();
-  if (child?.pid) {
+  const active = child;
+  if (active?.pid) {
     try {
       // The owned process group includes pnpm/Compose's child processes.
       if (process.platform === 'win32') {
-        if (child.exitCode === null && child.signalCode === null) await exec('taskkill', ['/PID', String(child.pid), '/T', '/F']);
-      } else process.kill(-child.pid, 'SIGINT');
-    } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ESRCH') throw error; }
+        if (active.exitCode === null && active.signalCode === null) await exec('taskkill', ['/PID', String(active.pid), '/T', '/F']);
+      } else process.kill(-active.pid, 'SIGINT');
+    } catch (error) {
+      const code = (error as { code?: string | number }).code;
+      if (code !== 'ESRCH' && !(process.platform === 'win32' && code === 128 && (active.exitCode !== null || active.signalCode !== null))) throw error;
+    }
   }
   await startup?.catch(() => {});
   await server?.close();
