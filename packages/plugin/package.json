@@ -1,0 +1,13 @@
+{
+  "name": "@isola/plugin",
+  "version": "0.1.0",
+  "type": "module",
+  "files": ["dist"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": { "build": "tsc -p tsconfig.json" }
+}
