@@ -1,0 +1,11 @@
+**/node_modules
+**/dist
+**/build
+**/target
+.git
+.superpowers
+.env*
+**/data
+artifacts
+test-results
+playwright-report

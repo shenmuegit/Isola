@@ -6,12 +6,41 @@ import { resolve, join } from 'node:path';
 import type { Pool } from 'pg';
 import { createAuth, registerAuth } from './auth.ts';
 import { publishPackage, releaseEntryUrl, type PublishedRelease } from './market.ts';
+import { installRelease } from './install.ts';
+import { proxyBackend } from './backend.ts';
 
 export async function buildApp({ db, dataDir, origin }: { db: Pool; dataDir: string; origin: string }) {
   const app = Fastify();
   const auth = await createAuth(db, origin);
   await db.query(await readFile(new URL('../sql/001-framework.sql', import.meta.url), 'utf8'));
   registerAuth(app, auth, origin);
+  app.post<{ Body: { releaseId: string } }>('/api/installations', {
+    schema: { body: { type: 'object', required: ['releaseId'], properties: { releaseId: { type: 'string', format: 'uuid' } } } },
+  }, async (request, reply) => {
+    const session = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
+    if (!session) return reply.status(401).send({ message: 'Unauthorized' });
+    return reply.status(201).send(await installRelease(db, session.user.id, request.body.releaseId));
+  });
+  app.get('/api/installations', async (request, reply) => {
+    const session = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
+    if (!session) return reply.status(401).send({ message: 'Unauthorized' });
+    const result = await db.query<PublishedRelease>('SELECT r.id, r.manifest FROM installations i JOIN releases r ON r.id = i.release_id WHERE i.user_id = $1 ORDER BY i.plugin_name', [session.user.id]);
+    return result.rows.map(release => ({ ...release, entryUrl: releaseEntryUrl(release.id) }));
+  });
+  await app.register(async backend => {
+    backend.removeAllContentTypeParsers();
+    backend.addContentTypeParser('*', { parseAs: 'buffer' }, (_request, body, done) => done(null, body));
+    backend.all<{ Params: { releaseId: string; '*': string } }>('/api/plugins/:releaseId/api/*', {
+      schema: { params: { type: 'object', required: ['releaseId'], properties: { releaseId: { type: 'string', format: 'uuid' }, '*': { type: 'string' } } } },
+    }, async (request, reply) => {
+      const session = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
+      if (!session) return reply.status(401).send({ message: 'Unauthorized' });
+      const result = await db.query<PublishedRelease>('SELECT r.id, r.manifest FROM installations i JOIN releases r ON r.id = i.release_id WHERE i.user_id = $1 AND i.release_id = $2', [session.user.id, request.params.releaseId]);
+      const release = result.rows[0];
+      if (!release) return reply.status(403).send({ message: 'Plugin is not installed' });
+      return proxyBackend(db, release, session.user.id, request, reply);
+    });
+  });
   await app.register(async market => {
     market.removeAllContentTypeParsers();
     market.addContentTypeParser('application/octet-stream', (_request, payload, done) => done(null, payload));

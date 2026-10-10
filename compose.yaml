@@ -1,4 +1,24 @@
 services:
+  server:
+    image: isola-server
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://isola:isola@postgres:5432/isola
+      TEST_DATABASE_URL: postgresql://isola:isola@postgres:5432/postgres
+      POSTGRES_CONTAINER: ${COMPOSE_PROJECT_NAME:-isola-workspace}-postgres-1
+      ORIGIN: ${ORIGIN:-http://localhost:3000}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET}
+      DATA_DIR: /data
+    ports:
+      - '3000:3000'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - releases:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
   postgres:
     image: postgres:18
     environment:
@@ -9,5 +29,11 @@ services:
       - '5432:5432'
     volumes:
       - postgres:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U isola -d isola']
+      interval: 2s
+      timeout: 5s
+      retries: 15
 volumes:
   postgres:
+  releases:

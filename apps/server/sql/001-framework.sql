@@ -3,6 +3,9 @@ CREATE TABLE IF NOT EXISTS plugins (
   publisher_id text NOT NULL REFERENCES "user"(id)
 );
 
+ALTER TABLE plugins ADD COLUMN IF NOT EXISTS backend_database text;
+ALTER TABLE plugins ADD COLUMN IF NOT EXISTS backend_password text;
+
 CREATE TABLE IF NOT EXISTS releases (
   id uuid PRIMARY KEY,
   plugin_name text NOT NULL REFERENCES plugins(name),
