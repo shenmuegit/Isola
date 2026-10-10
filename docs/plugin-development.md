@@ -1,0 +1,139 @@
+# 开发 React 插件
+
+本仓库的 `examples/notes` 是官方示例和可复制模板。前端只导入公开的 `@isola/plugin` 与 `@isola/plugin/ui`，构建为同一份 React Web 产物。
+
+## 1. 复制模板
+
+需要 Node.js 24、pnpm 10；带业务后端时需要 PostgreSQL 18 和 Docker。SDK 尚未发布到 npm，仓库内使用工作区依赖：
+
+```sh
+pnpm install --frozen-lockfile
+pnpm --filter @isola/plugin build
+```
+
+将 `examples/notes` 复制到 `examples/my-plugin`，修改 `package.json` 的 `name`、`version`、`description`、`isola.title` 和 `isola.server.image`，再从仓库根目录执行 `pnpm install`。`name` 唯一标识插件，镜像内也必须包含相同版本的 `package.json`。
+
+仓库外开发时，先在本仓库运行 `pnpm --dir packages/plugin pack`，得到 `packages/plugin/isola-plugin-0.1.0.tgz`。将模板的 `dependencies["@isola/plugin"]` 改为 `file:/实际绝对路径/isola-plugin-0.1.0.tgz`，再运行 `npm install`。SDK 包已包含 JS、类型、样式与 MIT LICENSE；无需从 npm 下载尚未发布的 SDK。
+
+清单沿用 npm 格式：
+
+```json
+{
+  "name": "my-isola-plugin",
+  "version": "0.1.0",
+  "description": "My tool",
+  "type": "module",
+  "files": ["dist"],
+  "isola": {
+    "title": "我的工具",
+    "apiVersion": 1,
+    "entry": "dist/index.html",
+    "server": { "image": "my-isola-plugin:0.1.0" }
+  }
+}
+```
+
+仅前端插件省略 `isola.server`。Vite 的 `base: './'` 使资源地址相对于安装后的入口。
+
+## 2. 声明业务布局
+
+区域内部写普通 React 内容。布局组件由 `@isola/plugin/ui` 导出，并自动加载框架样式。
+
+| 组件 | Props | 默认值与行为 |
+| --- | --- | --- |
+| `Stack` | `children: ReactNode`、`gap?: CSSProperties['gap']` | 纵向排列，`gap` 默认 `1rem` |
+| `Columns` | `children: ReactNode`、`gap?: CSSProperties['gap']` | 横向排列并换行，`gap` 默认 `1rem`；直接业务区域使用 `Pane`，可使用数组、Fragment 和条件渲染 |
+| `Pane` | `children: ReactNode`、必填 `label: string`、`flexBasis?: CSSProperties['flexBasis']`、`flexGrow?: number` | `label` 为区域可访问名称；`flexBasis` 默认 `20rem`、`flexGrow` 默认 `1`，只参与所在 `Columns` 的横向排版 |
+| `ListDetail` | `list: ReactNode`、`detail: ReactNode`、`hasSelection: boolean`、`onBack: () => void` | 可选；按自身容器的 `48rem` 分界切换展示，窄屏返回按钮调用 `onBack` |
+
+`gap` 使用合法非负 CSS 值；数字表示像素，字符串保留原生 CSS 单位。`flexBasis` 使用合法 CSS 值，数字表示像素。`flexGrow` 是有限、非负的无单位权重。区域可嵌套；尺寸变化保留 React 节点与 key。
+
+纯组合布局无需 `ListDetail`：
+
+```tsx
+import { Columns, Pane, Stack } from '@isola/plugin/ui';
+
+<Columns gap="1rem">
+  <Pane label="编辑" flexBasis="28rem" flexGrow={2}>
+    <Stack>{editor}{actions}</Stack>
+  </Pane>
+  <Pane label="辅助" flexBasis="16rem">{sidebar}</Pane>
+</Columns>
+```
+
+需要列表导航时按业务选择状态组合：
+
+```tsx
+import { ListDetail } from '@isola/plugin/ui';
+
+<ListDetail list={list} detail={editor}
+  hasSelection={selected !== null} onBack={() => setSelected(null)} />
+```
+
+## 3. 写业务
+
+`connect()` 取得绑定到当前 iframe 的 `PluginClient`。只传相对业务路径；宿主确定插件归属和后端地址，框架原生会话提供用户身份。
+
+```tsx
+import { connect } from '@isola/plugin';
+
+const client = await connect();
+const note = await client.request('/notes', {
+  method: 'POST', body: { title: '示例', body: '内容' },
+});
+const stop = client.subscribe('/events', event => console.log(event));
+// 在组件卸载时调用 stop()。
+```
+
+`request<T>(path, options?)` 支持 `GET`（默认）、`POST`、`PUT`、`DELETE`。普通对象作为 JSON，`File` / `Blob` 保持浏览器原生请求体。JSON 响应作为结果，HTTP 204 返回 `undefined`，非成功 HTTP 状态拒绝 Promise。`subscribe(path, listener)` 通过 SSE 接收 JSON 数据，返回取消订阅函数。
+
+有后端时使用框架传入的 `DATABASE_URL` 访问独立插件 PostgreSQL 数据库。HTTP 监听 `PORT=3000`；业务查询按可信 `x-isola-user-id` 限定用户数据。直接沿用示例的原生事务初始化与 `/health`：先读取镜像内清单，核对 `ISOLA_PLUGIN_NAME` / `ISOLA_PLUGIN_VERSION`，初始化成功后由 `/health` 返回 `{ name, version, apiVersion }`。健康信息来自镜像内清单。
+
+## 4. 本地联调
+
+目前可运行后端测试和单独的业务 HTTP 服务。宿主、示例前端和后端的统一开发命令将在会话及市场界面接入时提供；当前宿主入口仍是测试夹具加载器，不能声称已有完整市场预览。
+
+从仓库根目录测试（默认测试 PostgreSQL 地址见示例 README）：
+
+```sh
+pnpm --filter @isola/example-notes test
+```
+
+单独运行后端，PowerShell 示例：
+
+```powershell
+$env:DATABASE_URL = 'postgresql://user:password@127.0.0.1:5432/my_plugin'
+$env:PORT = '3000'
+$env:ISOLA_PLUGIN_NAME = '@isola/example-notes'
+$env:ISOLA_PLUGIN_VERSION = '0.1.0'
+pnpm --filter @isola/example-notes start
+```
+
+这应使用专用于本插件的数据库。手动检查业务路由时可传入测试用户上下文；正常插件前端通过宿主通道调用。
+
+## 5. 构建
+
+在仓库根目录：
+
+```sh
+pnpm --filter @isola/plugin build
+pnpm --filter @isola/example-notes build
+docker build -f examples/notes/server/Dockerfile -t isola-example-notes:0.1.0 examples/notes
+pnpm --dir examples/notes exec npm pack --dry-run
+pnpm --dir examples/notes pack
+```
+
+复制模板后用自己的包名和镜像标签替换命令。仓库外使用 `npm run build`、`npm pack`。前端包包含 `package.json` 与 `dist/index.html` 及其资源；后端随独立镜像提供，镜像可从运行框架服务端的 Docker 引擎取得。`package.json` 的 `isola.server.image` 必须指向这个镜像。
+
+## 6. 发布
+
+服务端已实现原生会话下的 `POST /api/market/releases`。将构建的 `.tgz` 作为 `application/octet-stream` 请求体发送；使用登录产生的会话 Cookie。以下为 Bash 的 HTTP 示例：
+
+```sh
+curl --fail-with-body --cookie session.cookies \
+  -H 'Content-Type: application/octet-stream' \
+  --data-binary @examples/notes/isola-example-notes-0.1.0.tgz \
+  http://localhost:3000/api/market/releases
+```
+
+`session.cookies` 需由同一框架服务端的登录会话取得。发布成功返回 HTTP 201 和 release `id`；`GET /api/market/releases` 列出发布版本，已登录用户可向 `POST /api/installations` 发送 `{ "releaseId": "返回的 id" }` 安装。市场界面的开发入口尚待接入。
