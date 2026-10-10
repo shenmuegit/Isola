@@ -7,6 +7,7 @@
     "node": ">=24 <25"
   },
   "scripts": {
+    "dev": "node --env-file-if-exists=.env scripts/dev.ts",
     "build": "pnpm -r build",
     "typecheck": "tsc --noEmit",
     "build:fixture": "pnpm --filter @isola/client exec vite build ../../e2e/fixtures/plugin",

@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
+  globalSetup: './e2e/market-server.ts',
   timeout: 45_000,
   expect: { timeout: 15_000 },
   workers: 2,

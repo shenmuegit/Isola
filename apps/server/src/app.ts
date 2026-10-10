@@ -71,5 +71,6 @@ export async function buildApp({ db, dataDir, origin }: { db: Pool; dataDir: str
     if (!result.rowCount) return reply.status(404).send({ message: 'Not found' });
     return reply.sendFile(asset.slice(5), join(resolve(dataDir), releaseId, 'package/dist'));
   });
+  await app.register(fastifyStatic, { root: resolve(import.meta.dirname, '../../client/dist'), decorateReply: false });
   return app;
 }

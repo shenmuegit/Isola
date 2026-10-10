@@ -91,7 +91,15 @@ const stop = client.subscribe('/events', event => console.log(event));
 
 ## 4. 本地联调
 
-目前可运行后端测试和单独的业务 HTTP 服务。宿主、示例前端和后端的统一开发命令将在会话及市场界面接入时提供；当前宿主入口仍是测试夹具加载器，不能声称已有完整市场预览。
+准备 Node.js 24、pnpm 10、Docker Engine 和 Compose。复制根目录 `.env.example` 为 `.env`，设置随机的 `BETTER_AUTH_SECRET` 后，在仓库根目录运行：
+
+```sh
+pnpm dev
+```
+
+命令构建 SDK、Web 宿主和官方笔记包，构建笔记镜像并启动 Compose 核心服务及 PostgreSQL、Vite 宿主。打开 `http://localhost:5173`，注册或登录，选择 `examples/notes/isola-example-notes-0.1.0.tgz` 点击“发布”，再点击“安装”和“打开”。插件使用实际构建产物、真实会话和独立业务数据库；修改插件后重新构建并递增版本再发布。
+
+Vite 代理 `/api` 和 `/plugins` 到核心服务；开发会话源为 `http://localhost:5173`。正式运行时由核心服务直接提供构建的宿主。`Ctrl+C` 关闭 Vite 并停止本次启动的核心、PostgreSQL 和插件容器；保留已有运行容器、数据库及归档卷。需要释放已停止容器时使用 Docker 原生命令，保留需要的数据卷。
 
 从仓库根目录测试（默认测试 PostgreSQL 地址见示例 README）：
 
@@ -110,6 +118,8 @@ pnpm --filter @isola/example-notes start
 ```
 
 这应使用专用于本插件的数据库。手动检查业务路由时可传入测试用户上下文；正常插件前端通过宿主通道调用。
+
+`pnpm test` 使用已安装的 Playwright Chromium、Firefox、WebKit 与可用的标准 Docker CLI，实际启动隔离的市场服务、PostgreSQL 和插件容器并清理它们。若 Windows 测试使用 rootful WSL 引擎，可显式设置 `ISOLA_TEST_WSL_DISTRO` 为发行版名称；此测试适配以 root 访问该发行版的原生 Docker socket，并通过 `wslpath` 转换当前工作目录。未设置时始终使用标准 `docker`，不改变用户组或 socket 权限。`pnpm dev` 始终使用标准 Docker/Compose。
 
 ## 5. 构建
 
@@ -136,4 +146,4 @@ curl --fail-with-body --cookie session.cookies \
   http://localhost:3000/api/market/releases
 ```
 
-`session.cookies` 需由同一框架服务端的登录会话取得。发布成功返回 HTTP 201 和 release `id`；`GET /api/market/releases` 列出发布版本，已登录用户可向 `POST /api/installations` 发送 `{ "releaseId": "返回的 id" }` 安装。市场界面的开发入口尚待接入。
+也可直接在宿主“插件市场”选择 `.tgz`，点击“发布”。发布成功后点击“安装”，完成后点击“打开”。发布和安装错误显示服务端原因；安装成功前不提供打开入口。`session.cookies` 需由同一框架服务端的登录会话取得。发布成功返回 HTTP 201 和 release `id`；`GET /api/market/releases` 列出发布版本，已登录用户可向 `POST /api/installations` 发送 `{ "releaseId": "返回的 id" }` 安装。

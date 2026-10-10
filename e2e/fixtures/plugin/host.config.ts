@@ -1,9 +1,12 @@
 import { Buffer } from 'node:buffer';
 import type { ViteDevServer } from 'vite';
 import config from '../../../apps/client/vite.config.js';
+import { fileURLToPath } from 'node:url';
 
 export default {
   ...config,
+  root: fileURLToPath(new URL('../host', import.meta.url)),
+  server: { cors: true },
   plugins: [{
     name: 'fixture-upload',
     configureServer(server: ViteDevServer) {

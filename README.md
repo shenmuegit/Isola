@@ -6,7 +6,7 @@
 <p>A shared home for independent tools.</p>
 
 <p>
-  <img alt="Status: design and planning" src="https://img.shields.io/badge/status-design%20%26%20planning-637C6A?style=flat-square" />
+  <img alt="Status: Web development preview" src="https://img.shields.io/badge/status-Web%20preview-637C6A?style=flat-square" />
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-637C6A?style=flat-square" /></a>
 </p>
 
@@ -27,7 +27,16 @@ Isola is an open-source framework being designed for community-built React plugi
 Plugin authors define their tools and business layouts. Isola provides the common client environment, server integration, installation flow, and adaptation across its supported clients.
 
 > [!NOTE]
-> **Design and planning phase.** This repository currently contains the architecture, proposed plugin interfaces, and an implementation plan. A runnable framework and released SDK are not available yet.
+> **Web development preview.** The local SDK, real sessions, marketplace, Docker installation and official notes example are runnable. Windows uses the Web client. Native clients have not been verified, and the SDK is not published to npm.
+
+Requires Node.js 24, pnpm 10, Docker Engine and Compose. Copy `.env.example` to `.env`, set a random `BETTER_AUTH_SECRET`, then run:
+
+```sh
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+Open `http://localhost:5173`, create an account, publish `examples/notes/isola-example-notes-0.1.0.tgz`, then install and open it. `Ctrl+C` stops this run's Vite and containers while preserving existing running containers and data. See the [plugin development guide](docs/plugin-development.md) for the package contract and publishing steps.
 
 ## 🧭 Design commitments
 
@@ -72,7 +81,7 @@ Authors compose business regions using a small public React API:
 - `Pane` supplies a named region with CSS sizing constraints.
 - `ListDetail` is an optional component for list-and-detail navigation.
 
-The following illustrates the **proposed SDK API**:
+The following illustrates the **local SDK API**:
 
 ```tsx
 import type { ReactNode } from 'react';

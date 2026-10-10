@@ -1,3 +1,4 @@
+name: isola-workspace
 services:
   server:
     image: isola-server

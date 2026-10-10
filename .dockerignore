@@ -6,6 +6,7 @@
 .superpowers
 .env*
 **/data
+**/*.tgz
 artifacts
 test-results
 playwright-report

@@ -25,6 +25,8 @@ export async function startBackend(db: Pool, release: PublishedRelease): Promise
   const name = `isola-${release.id}`;
   const origin = `http://${name}:3000`;
   let created = false;
+  let createdEgress = false;
+  let egress: string | undefined;
   try {
     // PostgreSQL serializes provisioning across core processes without an in-memory manager.
     await client.query('SELECT pg_advisory_lock(hashtextextended(current_database() || $1, 0))', [release.manifest.name]);
@@ -41,7 +43,8 @@ export async function startBackend(db: Pool, release: PublishedRelease): Promise
     const revoke = await client.query('SELECT format(\'REVOKE ALL ON DATABASE %I FROM PUBLIC\', $1::text) AS sql', [database]);
     await client.query(revoke.rows[0].sql);
     const network = `isola-${database}`;
-    if (!await inspect('network', network)) await docker('network', 'create', network);
+    egress = `${network}-egress`;
+    if (!await inspect('network', network)) await docker('network', 'create', '--internal', network);
     for (const container of [process.env.HOSTNAME, process.env.POSTGRES_CONTAINER]) {
       if (!container) throw new Error('Core and PostgreSQL container identities are required');
       const state = await inspect('container', container);
@@ -55,9 +58,15 @@ export async function startBackend(db: Pool, release: PublishedRelease): Promise
       url.password = password;
       url.pathname = `/${database}`;
       created = true;
-      await docker('run', '-d', '--name', name, '--network', network, '--restart', 'unless-stopped',
+      await docker('create', '--name', name, '--network', network, '--restart', 'unless-stopped',
         '-e', `DATABASE_URL=${url}`, '-e', `ISOLA_PLUGIN_NAME=${release.manifest.name}`,
         '-e', `ISOLA_PLUGIN_VERSION=${release.manifest.version}`, '-e', 'PORT=3000', image);
+      if (!await inspect('network', egress)) {
+        await docker('network', 'create', egress);
+        createdEgress = true;
+      }
+      await docker('network', 'connect', egress, name);
+      await docker('start', name);
     } else if (!state.State.Running) await docker('start', name);
     for (let attempt = 0; attempt < 50; attempt++) {
       try {
@@ -73,6 +82,7 @@ export async function startBackend(db: Pool, release: PublishedRelease): Promise
     throw new Error('Backend did not become healthy');
   } catch (cause) {
     if (created) await docker('rm', '-f', name).catch(() => {});
+    if (createdEgress && egress) await docker('network', 'rm', egress).catch(() => {});
     throw Object.assign(new Error('Plugin backend could not start', { cause }), { statusCode: 502 });
   } finally {
     try { await client.query('SELECT pg_advisory_unlock(hashtextextended(current_database() || $1, 0))', [release.manifest.name]); }

@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import { fileURLToPath } from 'node:url';
 
 export default defineConfig({
-  server: { cors: true },
+  server: { cors: true, proxy: { '/api': 'http://127.0.0.1:3000', '/plugins': 'http://127.0.0.1:3000' } },
   resolve: {
     dedupe: ['react', 'react-dom'],
     alias: [

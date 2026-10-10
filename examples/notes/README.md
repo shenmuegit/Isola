@@ -29,4 +29,6 @@ docker build -f server/Dockerfile -t isola-example-notes:0.1.0 .
 | `PUT /notes/:id` | 更新当前用户的笔记并返回记录；不存在时 HTTP 404 |
 | `GET /events` | SSE，先发 `{ type: 'ready' }`，新建或更新后发 `{ type: 'changed', note }` |
 
-界面以“新建”打开草稿，“保存”创建或更新笔记，保存成功显示“已保存”。SSE 更新列表，保留正在输入的编辑草稿。宿主、插件前端与后端的一体化开发入口随会话和市场界面一起实现；当前不能单独打开本例 HTML 完成宿主通道联调。
+界面以“新建”打开草稿，“保存”创建或更新笔记，保存成功显示“已保存”。SSE 更新列表，保留正在输入的编辑草稿。
+
+完整预览：准备 Docker Engine/Compose，复制根目录 `.env.example` 为 `.env` 并设置随机 `BETTER_AUTH_SECRET`，从仓库根目录运行 `pnpm dev`。打开 `http://localhost:5173`，注册或登录，在“插件市场”发布命令构建的 `examples/notes/isola-example-notes-0.1.0.tgz`，点击“安装”“打开”。保存后返回市场或刷新重开，内容来自实际插件 PostgreSQL 数据库。`Ctrl+C` 停止本次启动的进程和容器，保留数据与原先运行的容器。

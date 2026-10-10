@@ -27,11 +27,13 @@ let failed: { id: string };
 let upgrade: { id: string };
 let mismatch: { id: string };
 let next: { id: string };
+let coreRoutes: string;
 const signupOrigin = 'http://localhost:3000';
 
 before(async () => {
   process.env.BETTER_AUTH_SECRET = 'isola-test-only-secret-with-at-least-32-characters';
   database = await testDatabase();
+  coreRoutes = await (await import('node:fs/promises')).readFile('/proc/net/route', 'utf8');
   directory = await mkdtemp(join(tmpdir(), 'isola-install-'));
   app = await buildApp({ db: database.db, dataDir: directory, origin: signupOrigin });
   origin = await app.listen({ host: '0.0.0.0', port: 0 });
@@ -65,12 +67,15 @@ after(async () => {
   await app?.close();
   if (database) {
     const names = await database.db.query('SELECT backend_database FROM plugins WHERE backend_database IS NOT NULL').catch(() => ({ rows: [] }));
-    for (const row of (await database.db.query('SELECT id FROM releases')).rows) await exec('docker', ['rm', '-f', `isola-${row.id}`]).catch(() => {});
+    for (const row of (await database.db.query('SELECT id FROM releases')).rows) {
+      await exec('docker', ['rm', '-f', `isola-${row.id}`]).catch(() => {});
+    }
     for (const { backend_database: name } of names.rows) {
       const network = `isola-${name}`;
       await exec('docker', ['network', 'disconnect', '-f', network, process.env.HOSTNAME!]).catch(() => {});
       await exec('docker', ['network', 'disconnect', '-f', network, process.env.POSTGRES_CONTAINER!]).catch(() => {});
       await exec('docker', ['network', 'rm', network]).catch(() => {});
+      await exec('docker', ['network', 'rm', `${network}-egress`]).catch(() => {});
       await database.db.query(`DROP DATABASE "${name}" WITH (FORCE)`);
       await database.db.query(`DROP ROLE "${name}"`);
     }
@@ -101,7 +106,10 @@ test('real backend concurrent installation reuses one healthy container and uniq
   assert.ok(listed.json().some((item: { id: string }) => item.id === release.id));
   const container = JSON.parse((await exec('docker', ['inspect', `isola-${release.id}`])).stdout)[0];
   assert.equal(container.State.Running, true);
-  assert.equal(Object.keys(container.NetworkSettings.Networks).length, 1);
+  assert.equal(Object.keys(container.NetworkSettings.Networks).length, 2);
+  const routes = await (await import('node:fs/promises')).readFile('/proc/net/route', 'utf8');
+  const gateway = (text: string) => text.split('\n').find(line => line.split(/\s+/)[1] === '00000000');
+  assert.equal(gateway(routes), gateway(coreRoutes));
   assert.deepEqual(container.HostConfig.PortBindings, {});
   assert.equal(container.Mounts.length, 0);
 });
@@ -190,8 +198,13 @@ test('each plugin has a separate database role and Docker network', async () => 
   const a = await inspect(release.id);
   const b = await inspect(second.id);
   assert.notDeepEqual(Object.keys(a.NetworkSettings.Networks), Object.keys(b.NetworkSettings.Networks));
-  const network = JSON.parse((await exec('docker', ['network', 'inspect', Object.keys(a.NetworkSettings.Networks)[0]!])).stdout)[0];
+  const internal = Object.keys(a.NetworkSettings.Networks).find(name => !name.endsWith('-egress'))!;
+  const network = JSON.parse((await exec('docker', ['network', 'inspect', internal])).stdout)[0];
+  assert.equal(network.Internal, true);
   assert.equal(Object.keys(network.Containers).length, 3);
+  const egress = JSON.parse((await exec('docker', ['network', 'inspect', `${internal}-egress`])).stdout)[0];
+  assert.equal(egress.Internal, false);
+  assert.equal(Object.keys(egress.Containers).length, 1);
   const url = new URL(a.Config.Env.find((value: string) => value.startsWith('DATABASE_URL=')).slice(13));
   const bUrl = new URL(b.Config.Env.find((value: string) => value.startsWith('DATABASE_URL=')).slice(13));
   const plugin = new Pool({ connectionString: url.toString() });
@@ -234,4 +247,6 @@ test('successful upgrade keeps the database and old version available to its oth
   assert.equal((await call(release.id, '/notes')).status, 403);
   assert.equal((await call(release.id, '/notes', otherCookie)).status, 200);
   assert.equal((await call(next.id, '/notes', otherCookie)).status, 403);
+  const networks = async (id: string) => Object.keys(JSON.parse((await exec('docker', ['inspect', `isola-${id}`])).stdout)[0].NetworkSettings.Networks).sort();
+  assert.deepEqual(await networks(next.id), await networks(release.id));
 });
