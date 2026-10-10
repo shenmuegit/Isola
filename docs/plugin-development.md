@@ -154,7 +154,7 @@ curl --fail-with-body --cookie session.cookies \
 
 ## 客户端配置与验证范围
 
-当前只验收 Web，Windows 使用同一 Web 客户端。Grove 尚未克隆或接入；SDK 未发布到 npm。浏览器证据与未完成项见[验收记录](acceptance.md)。
+当前只验收 Web，Windows 使用同一 Web 客户端。Grove 给定网页对应的原型已在独立测试副本中按公开规则接入；SDK 未发布到 npm。浏览器证据与未完成项见[验收记录](acceptance.md)。
 
 `apps/client/src-tauri` 由官方 Tauri 2 CLI 生成。外壳直接加载框架宿主：`build.devUrl` 为已验证的 `pnpm dev` 地址 `http://localhost:5173`，`build.frontendDist` 是本地核心服务 `http://localhost:3000`。前者用于开发，后者在发布构建时加载远程宿主，不将另一份插件前端打进外壳。
 

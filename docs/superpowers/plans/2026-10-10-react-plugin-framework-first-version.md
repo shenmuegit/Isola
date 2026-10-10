@@ -8,7 +8,7 @@
 
 **Tech Stack:** Node.js 24、pnpm 10、TypeScript、React、Vite、Fastify、PostgreSQL、Docker、Tauri 2。会话接入使用 Better Auth 原生 Fastify 集成，归档使用 npm 打包格式和 node-tar；测试使用 Node 测试运行器及 Playwright。[^1][^2]
 
-**Spec:** [Isola 技术方案](../specs/2026-10-10-react-plugin-framework-design.md)。任务 1–6 的实现已提交；任务 7 按当前 Web 范围整理配置和证据。实际通过项与未完成项见[验收记录](../../acceptance.md)。
+**Spec:** [Isola 技术方案](../specs/2026-10-10-react-plugin-framework-design.md)。任务 1–7 的实现已提交；任务 4 的破坏性初始化恢复责任仍待确认。实际通过项与未完成项见[验收记录](../../acceptance.md)。
 
 ## 📋 全局约束
 
@@ -175,7 +175,7 @@ export declare function ListDetail(props: ListDetailProps): ReactElement;
 
 已用官方 `@tauri-apps/cli` 2.12.2 初始化 `apps/client/src-tauri`，保留共用 Rust 入口与原生配置。`build.devUrl` 为 `http://localhost:5173`，`build.frontendDist` 为本地核心服务 `http://localhost:3000`；部署时改为实际服务 URL，使用 Tauri 原生配置机制。插件规范、产物和 SDK 不变。
 
-当前只验收 Web，Windows 使用 Web。原生 Windows/macOS/iPhone 构建与运行未执行；页面缩放、真实软键盘、安全区域和独立客户端读取同一记录未验证。浏览器 WebKit 不等同于 Safari 或 iPhone。Grove 尚未克隆或接入。
+当前只验收 Web，Windows 使用 Web。原生 Windows/macOS/iPhone 构建与运行未执行；页面缩放、真实软键盘和安全区域未验证。独立 Firefox 会话读取 Grove 同一安装版本与保存内容已验证。浏览器 WebKit 不等同于 Safari 或 iPhone。Grove 给定网页对应的原型已在独立测试副本中按公开规则安装。
 
 具体命令、结果和未完成项见[验收记录](../../acceptance.md)。任务 7 只检查依赖安装、配置解析、类型和 Web 构建，不重复未变化的 60/24/6 用例。
 
