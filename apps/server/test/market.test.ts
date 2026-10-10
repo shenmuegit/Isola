@@ -71,17 +71,17 @@ test('a real npm package publishes readable sandbox HTML and CORS-enabled module
   const html = await app.inject({ url: entryUrl });
   assert.equal(html.statusCode, 200);
   assert.match(html.body, /<h1>Notes<\/h1>/);
-  assert.match(html.headers['content-security-policy']!, /sandbox allow-scripts/);
+  assert.match(html.headers['content-security-policy']!, /sandbox allow-scripts allow-forms/);
   assert.equal(html.headers['access-control-allow-origin'], '*');
   const module = await app.inject({ url: entryUrl.replace('index.html', 'main.js'), headers: { origin: 'null' } });
   assert.equal(module.statusCode, 200);
   assert.match(module.headers['content-type']!, /javascript/);
   assert.equal(module.headers['access-control-allow-origin'], '*');
-  assert.equal(module.headers['content-security-policy'], 'sandbox allow-scripts');
+  assert.equal(module.headers['content-security-policy'], 'sandbox allow-scripts allow-forms');
   const styles = await app.inject({ url: entryUrl.replace('index.html', 'style.css') });
   assert.equal(styles.statusCode, 200);
   assert.match(styles.headers['content-type']!, /css/);
-  assert.equal(styles.headers['content-security-policy'], 'sandbox allow-scripts');
+  assert.equal(styles.headers['content-security-policy'], 'sandbox allow-scripts allow-forms');
   const listed = await app.inject({ url: '/api/market/releases', headers: { origin: 'null' } });
   assert.equal(listed.statusCode, 200);
   assert.equal(listed.headers['access-control-allow-origin'], undefined);
@@ -94,7 +94,7 @@ for (const [asset, contentType] of [['', 'text/html'], ['nested/', 'text/html'],
     const response = await app.inject({ url: entryUrl.replace('index.html', asset), headers: { origin: 'null' } });
     assert.equal(response.statusCode, 200, response.body);
     assert.ok(response.headers['content-type']?.startsWith(contentType));
-    assert.equal(response.headers['content-security-policy'], 'sandbox allow-scripts');
+    assert.equal(response.headers['content-security-policy'], 'sandbox allow-scripts allow-forms');
     assert.equal(response.headers['access-control-allow-origin'], '*');
   });
 }

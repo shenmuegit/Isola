@@ -19,6 +19,14 @@ function Fixture() {
   useEffect(() => {
     if (earlyConnection) void earlyConnection.then(client => { automatic.current = client; setOutput('已连接'); }).catch(error => setOutput(error.message));
   }, [mode]);
+  if (mode === 'form') return <form onSubmit={event => {
+    event.preventDefault();
+    const text = new FormData(event.currentTarget).get('text');
+    void connect().then(async client => setOutput(JSON.stringify(await client.request('/json', { method: 'POST', body: { text } })))).catch(error => setOutput(error.message));
+  }}>
+    <label htmlFor="form-text">内容</label><input id="form-text" name="text" required />
+    <button type="submit">保存表单</button><output>{output}</output>
+  </form>;
   if (mode === 'auto') return <Stack>
     <img src="/delayed-image" alt="加载中的图片" />
     <button onClick={() => void automatic.current?.request('/json').then(data => setOutput(JSON.stringify(data))).catch(error => setOutput(error.message))}>自动连接请求</button>

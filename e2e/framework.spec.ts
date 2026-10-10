@@ -3,6 +3,21 @@ import { expect, test } from '@playwright/test';
 const entry = '/@fs/' + process.cwd().replaceAll('\\', '/') + '/e2e/fixtures/plugin/dist/index.html?mode=bridge';
 const host = '/?release=test-release&entry=' + encodeURIComponent(entry);
 
+test('a standard React form submits through the bridge while iframe origin stays opaque', async ({ page }) => {
+  let submitted: unknown;
+  page.on('request', request => { if (request.url().endsWith('/api/plugins/test-release/api/json')) submitted = request.postDataJSON(); });
+  await page.goto('/?release=test-release&entry=' + encodeURIComponent(entry.replace('mode=bridge', 'mode=form')));
+  const plugin = page.frameLocator('iframe[title="插件"]');
+  await plugin.getByLabel('内容', { exact: true }).fill('native form');
+  await plugin.getByRole('button', { name: '保存表单' }).click();
+  await expect(plugin.locator('output')).toContainText('"saved":true');
+  expect(submitted).toEqual({ text: 'native form' });
+  expect(await plugin.locator('form').evaluate(() => {
+    try { return parent.document.body.textContent; }
+    catch { return 'parent inaccessible'; }
+  })).toBe('parent inaccessible');
+});
+
 test('File body survives MessageChannel and requests belong to the actual iframe release', async ({ page }) => {
   await page.goto(host);
   const plugin = page.frameLocator('iframe[title="插件"]');

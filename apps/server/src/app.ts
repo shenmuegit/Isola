@@ -58,7 +58,7 @@ export async function buildApp({ db, dataDir, origin }: { db: Pool; dataDir: str
   await app.register(fastifyStatic, {
     root: resolve(dataDir), serve: false,
     setHeaders(reply) {
-      reply.header('content-security-policy', 'sandbox allow-scripts');
+      reply.header('content-security-policy', 'sandbox allow-scripts allow-forms');
       reply.header('access-control-allow-origin', '*');
     },
   });

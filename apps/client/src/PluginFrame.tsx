@@ -94,5 +94,5 @@ export function PluginFrame({ releaseId, entryUrl }: { releaseId: string; entryU
     return () => { window.removeEventListener('message', connect); disconnect.current(); };
   }, [releaseId, entryUrl]);
 
-  return <iframe ref={frame} title="插件" sandbox="allow-scripts" src={entryUrl} onLoad={() => disconnect.current()} style={{ display: 'block', width: '100%', height: '100%', border: 0 }} />;
+  return <iframe ref={frame} title="插件" sandbox="allow-scripts allow-forms" src={entryUrl} onLoad={() => disconnect.current()} style={{ display: 'block', width: '100%', height: '100%', border: 0 }} />;
 }
