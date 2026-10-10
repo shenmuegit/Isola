@@ -9,7 +9,7 @@ createServer(async (req, res) => {
   const user = req.headers['x-isola-user-id'];
   const json = (value, status = 200) => { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(value)); };
   try {
-    if (url.pathname === '/health') return json({ name: process.env.ISOLA_PLUGIN_NAME, version: process.env.HEALTH_VERSION || process.env.ISOLA_PLUGIN_VERSION, apiVersion: 1 });
+    if (url.pathname === '/health') return json({ name: process.env.ISOLA_PLUGIN_NAME, version: process.env.HEALTH_VERSION || process.env.ISOLA_PLUGIN_VERSION, apiVersion: 1 }, process.env.HEALTH_VERSION === 'unready' ? 503 : 200);
     if (url.pathname === '/events') {
       streams++;
       res.writeHead(200, { 'content-type': 'text/event-stream' });

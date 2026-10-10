@@ -43,6 +43,10 @@ function Fixture() {
     <button onClick={() => void connect().then(async client => setOutput(JSON.stringify(await client.request('/slow')))).catch(error => setOutput(error.message))}>超时请求</button>
     <output>{output}</output>
   </Stack>;
+  if (mode === 'detail-form') return <form onSubmit={event => { event.preventDefault(); setOutput('submitted'); }}>
+    <ListDetail hasSelection={selected} onBack={() => setSelected(false)} list={<button type="button" onClick={() => setSelected(true)}>选择笔记</button>} detail={<Editor />} />
+    <output>{output || 'not submitted'}</output>
+  </form>;
   if (mode === 'detail') return <ListDetail hasSelection={selected} onBack={() => setSelected(false)} list={<button onClick={() => setSelected(true)}>选择笔记</button>} detail={<Editor />} />;
   if (mode === 'nested-detail') return <ListDetail hasSelection={false} onBack={() => {}} list={<ListDetail hasSelection={selected} onBack={() => setSelected(false)} list={<button onClick={() => setSelected(true)}>选择内层笔记</button>} detail={<Editor />} />} detail="外层详情" />;
   if (mode === 'input') return <Stack><Pane label="表单"><div style={{ height: 1200 }}>业务内容</div><Editor /><button>保存</button></Pane></Stack>;

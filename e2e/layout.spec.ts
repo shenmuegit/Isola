@@ -70,6 +70,18 @@ test('ListDetail keeps mounted state and moves focus into the visible pane', asy
   await expect(plugin.getByRole('button', { name: '返回' })).toBeHidden();
 });
 
+test('ListDetail Back navigates without submitting an enclosing business form', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto(host('detail-form'));
+  const plugin = page.frameLocator('iframe[title="插件"]');
+  await plugin.getByRole('button', { name: '选择笔记' }).click();
+  await expect(plugin.getByLabel('内容')).toBeVisible();
+  await plugin.getByRole('button', { name: '返回' }).click();
+  await expect(plugin.getByRole('button', { name: '选择笔记' })).toBeVisible();
+  await expect(plugin.getByLabel('内容')).toBeHidden();
+  await expect(plugin.locator('output')).toHaveText('not submitted');
+});
+
 test('focused input and action remain reachable after the visible viewport height shrinks', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto(host('input'));

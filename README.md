@@ -29,14 +29,14 @@ Plugin authors define their tools and business layouts. Isola provides the commo
 > [!NOTE]
 > **Web development preview.** Real sessions, marketplace publishing, Docker installation, saving and reopening notes have passed browser acceptance. A minimal Tauri 2 shell configuration is included; native Windows, macOS and iPhone clients have not been built or run. The SDK is not published to npm. See [acceptance evidence and pending checks](docs/acceptance.md).
 
-Requires Node.js 24, pnpm 10, Docker Engine and Compose. Copy `.env.example` to `.env`, set a random `BETTER_AUTH_SECRET`, then run:
+Requires Node.js 24, pnpm 10, Docker Engine and Compose. Copy `.env.example` to `.env`, set private random values for `PGPASSWORD` and `BETTER_AUTH_SECRET`, then run:
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open `http://localhost:5173`, create an account, publish `examples/notes/isola-example-notes-0.1.0.tgz`, then install and open it. `Ctrl+C` stops this run's Vite and containers while preserving existing running containers and data. See the [plugin development guide](docs/plugin-development.md) for the package contract and publishing steps.
+Open `http://localhost:5173`, create an account, publish `examples/notes/isola-example-notes-0.1.0.tgz`, then install and open it. `Ctrl+C` stops this run's Vite and containers while preserving existing running containers and data. If this Compose project's core is already running, `pnpm dev` exits before building; use that service or explicitly run `docker compose stop server` before starting development. Existing databases need a native role-password change when adopting the new secret; see the [plugin development guide](docs/plugin-development.md) for that procedure, the package contract and publishing steps.
 
 ## 🧭 Design commitments
 

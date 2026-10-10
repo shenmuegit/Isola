@@ -60,7 +60,7 @@ export function ListDetail({ list, detail, hasSelection, onBack }: ListDetailPro
     <div className="isola-list-detail-panes">
       <section ref={listPane} className="isola-list" aria-label="列表" tabIndex={-1}>{list}</section>
       <section ref={detailPane} className="isola-detail" aria-label="详情" tabIndex={-1}>
-        <button ref={back} className="isola-back" onClick={onBack}>返回</button>{detail}
+        <button type="button" ref={back} className="isola-back" onClick={onBack}>返回</button>{detail}
       </section>
     </div>
   </div>;

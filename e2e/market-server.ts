@@ -10,6 +10,7 @@ export default async function setup() {
   const name = `isola-e2e-${randomUUID().slice(0, 8)}`;
   const postgres = `${name}-postgres`;
   const server = `${name}-server`;
+  const password = randomUUID();
   let closing = false;
   async function close() {
     if (closing) return;
@@ -47,13 +48,13 @@ export default async function setup() {
     await docker('build', '-t', 'isola-example-notes:0.1.0', '-f', `${workspace}/examples/notes/server/Dockerfile`, `${workspace}/examples/notes`);
     await docker('build', '-t', 'isola-server', '-f', `${workspace}/apps/server/Dockerfile`, workspace);
     await docker('network', 'create', name);
-    await docker('run', '-d', '--name', postgres, '--network', name, '-e', 'POSTGRES_USER=isola', '-e', 'POSTGRES_PASSWORD=isola', '-e', 'POSTGRES_DB=isola', 'postgres:18');
+    await docker('run', '-d', '--name', postgres, '--network', name, '-e', 'POSTGRES_USER=isola', '-e', `POSTGRES_PASSWORD=${password}`, '-e', 'POSTGRES_DB=isola', 'postgres:18');
     for (let attempt = 0; ; attempt++) {
       try { await docker('exec', postgres, 'pg_isready', '-U', 'isola'); break; }
       catch (error) { if (attempt === 60) throw error; await setTimeout(250); }
     }
     await docker('run', '-d', '--name', server, '--network', name, '-p', '3000:3000', '-v', '/var/run/docker.sock:/var/run/docker.sock',
-      '-e', `DATABASE_URL=postgresql://isola:isola@${postgres}:5432/isola`, '-e', `POSTGRES_CONTAINER=${postgres}`,
+      '-e', `DATABASE_URL=postgresql://isola@${postgres}:5432/isola`, '-e', `PGPASSWORD=${password}`, '-e', `POSTGRES_CONTAINER=${postgres}`,
       '-e', 'BETTER_AUTH_SECRET=isola-e2e-secret-with-at-least-32-characters', '-e', 'ORIGIN=http://127.0.0.1:3000', '-e', 'DATA_DIR=/data', 'isola-server');
     console.log(`Started ${name}`);
     for (let attempt = 0; ; attempt++) {

@@ -27,6 +27,7 @@ export async function startBackend(db: Pool, release: PublishedRelease): Promise
   let created = false;
   let createdEgress = false;
   let egress: string | undefined;
+  let failure = 'Plugin backend database provisioning failed';
   try {
     // PostgreSQL serializes provisioning across core processes without an in-memory manager.
     await client.query('SELECT pg_advisory_lock(hashtextextended(current_database() || $1, 0))', [release.manifest.name]);
@@ -44,9 +45,13 @@ export async function startBackend(db: Pool, release: PublishedRelease): Promise
     await client.query(revoke.rows[0].sql);
     const network = `isola-${database}`;
     egress = `${network}-egress`;
+    failure = 'Plugin backend network setup failed';
     if (!await inspect('network', network)) await docker('network', 'create', '--internal', network);
     for (const container of [process.env.HOSTNAME, process.env.POSTGRES_CONTAINER]) {
-      if (!container) throw new Error('Core and PostgreSQL container identities are required');
+      if (!container) {
+        failure = 'Core and PostgreSQL container identities are required';
+        throw new Error(failure);
+      }
       const state = await inspect('container', container);
       if (!state?.NetworkSettings.Networks[network]) await docker('network', 'connect', network, container);
     }
@@ -58,21 +63,32 @@ export async function startBackend(db: Pool, release: PublishedRelease): Promise
       url.password = password;
       url.pathname = `/${database}`;
       created = true;
+      failure = 'Plugin backend container creation failed';
       await docker('create', '--name', name, '--network', network, '--restart', 'unless-stopped',
         '-e', `DATABASE_URL=${url}`, '-e', `ISOLA_PLUGIN_NAME=${release.manifest.name}`,
         '-e', `ISOLA_PLUGIN_VERSION=${release.manifest.version}`, '-e', 'PORT=3000', image);
+      failure = 'Plugin backend network setup failed';
       if (!await inspect('network', egress)) {
         await docker('network', 'create', egress);
         createdEgress = true;
       }
       await docker('network', 'connect', egress, name);
+      failure = 'Plugin backend container start failed';
       await docker('start', name);
-    } else if (!state.State.Running) await docker('start', name);
+    } else if (!state.State.Running) {
+      failure = 'Plugin backend container start failed';
+      await docker('start', name);
+    }
+    failure = 'Backend did not become healthy';
     for (let attempt = 0; attempt < 50; attempt++) {
       try {
         const response = await fetch(`${origin}/health`, { redirect: 'error', signal: AbortSignal.timeout(1000) });
+        if (!response.ok) throw new Error(failure);
         const health = await response.json();
-        if (!response.ok || health.name !== release.manifest.name || health.version !== release.manifest.version || health.apiVersion !== 1) throw new Error('Backend health does not match its release');
+        if (health.name !== release.manifest.name || health.version !== release.manifest.version || health.apiVersion !== 1) {
+          failure = 'Backend health does not match its release';
+          throw new Error(failure);
+        }
         return origin;
       } catch (error) {
         if (attempt === 49 || (error instanceof Error && error.message === 'Backend health does not match its release')) throw error;
@@ -83,7 +99,7 @@ export async function startBackend(db: Pool, release: PublishedRelease): Promise
   } catch (cause) {
     if (created) await docker('rm', '-f', name).catch(() => {});
     if (createdEgress && egress) await docker('network', 'rm', egress).catch(() => {});
-    throw Object.assign(new Error('Plugin backend could not start', { cause }), { statusCode: 502 });
+    throw Object.assign(new Error(failure, { cause }), { statusCode: 502 });
   } finally {
     try { await client.query('SELECT pg_advisory_unlock(hashtextextended(current_database() || $1, 0))', [release.manifest.name]); }
     finally { client.release(); }

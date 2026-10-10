@@ -5,6 +5,9 @@ import { createServer } from 'vite';
 const exec = promisify(execFile);
 const docker = async (...args: string[]) => (await exec('docker', args, { maxBuffer: 8 * 1024 * 1024 })).stdout.trim();
 const pnpm = process.env.npm_execpath!;
+if (await docker('compose', 'ps', '--status', 'running', '-q', 'server')) {
+  throw new Error('This Compose project already has a running core. Use the existing service, or explicitly stop it with docker compose stop server before pnpm dev.');
+}
 const running = new Set((await docker('ps', '--format', '{{.Names}}')).split('\n'));
 const controller = new AbortController();
 let child: ChildProcess | undefined;

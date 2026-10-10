@@ -29,14 +29,14 @@ Isola 是一个开源 React 插件框架，已实现 SDK、Web 客户端、服�
 > [!NOTE]
 > **Web 开发预览。** 真实会话、市场发布、Docker 安装、笔记保存与重新打开已通过浏览器验收。仓库包含最小 Tauri 2 外壳配置；Windows、macOS、iPhone 原生客户端未构建或运行，SDK 尚未发布到 npm。详见[验收证据与未完成项](docs/acceptance.md)。
 
-需要 Node.js 24、pnpm 10、Docker Engine 和 Compose。复制 `.env.example` 为 `.env`，设置随机的 `BETTER_AUTH_SECRET` 后运行：
+需要 Node.js 24、pnpm 10、Docker Engine 和 Compose。复制 `.env.example` 为 `.env`，为 `PGPASSWORD` 和 `BETTER_AUTH_SECRET` 设置各自私有的随机值后运行：
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-打开 `http://localhost:5173`，创建账号，发布 `examples/notes/isola-example-notes-0.1.0.tgz`，再安装并打开。`Ctrl+C` 关闭本次启动的 Vite 和容器，保留已有运行容器和数据。插件契约与发布步骤见[开发指南](docs/plugin-development.md)。
+打开 `http://localhost:5173`，创建账号，发布 `examples/notes/isola-example-notes-0.1.0.tgz`，再安装并打开。`Ctrl+C` 关闭本次启动的 Vite 和容器，保留已有运行容器和数据。如果本 Compose 项目的核心服务已运行，`pnpm dev` 会在构建前退出；请使用已有服务，或明确执行 `docker compose stop server` 后再启动开发。已有数据库采用新密码时需要原生角色密码变更；操作步骤、插件契约与发布步骤见[开发指南](docs/plugin-development.md)。
 
 ## 🧭 设计约定
 

@@ -91,7 +91,7 @@ const stop = client.subscribe('/events', event => console.log(event));
 
 ## 4. 本地联调
 
-准备 Node.js 24、pnpm 10、Docker Engine 和 Compose。复制根目录 `.env.example` 为 `.env`，设置随机的 `BETTER_AUTH_SECRET` 后，在仓库根目录运行：
+准备 Node.js 24、pnpm 10、Docker Engine 和 Compose。复制根目录 `.env.example` 为 `.env`，为 `PGPASSWORD` 和 `BETTER_AUTH_SECRET` 设置各自私有的随机值。`PGPASSWORD` 留空时 Compose 会明确报错；它供 PostgreSQL 初始化管理员角色及核心的 node-postgres 连接使用，无需把密码拼进 `DATABASE_URL`。插件只收到自己的受限数据库连接地址。在仓库根目录运行：
 
 ```sh
 pnpm dev
@@ -100,6 +100,10 @@ pnpm dev
 命令构建 SDK、Web 宿主和官方笔记包，构建笔记镜像并启动 Compose 核心服务及 PostgreSQL、Vite 宿主。打开 `http://localhost:5173`，注册或登录，选择 `examples/notes/isola-example-notes-0.1.0.tgz` 点击“发布”，再点击“安装”和“打开”。插件使用实际构建产物、真实会话和独立业务数据库；修改插件后重新构建并递增版本再发布。
 
 Vite 代理 `/api` 和 `/plugins` 到核心服务；开发会话源为 `http://localhost:5173`。正式运行时由核心服务直接提供构建的宿主。`Ctrl+C` 关闭 Vite 并停止本次启动的核心、PostgreSQL 和插件容器；保留已有运行容器、数据库及归档卷。需要释放已停止容器时使用 Docker 原生命令，保留需要的数据卷。
+
+如果本 Compose 项目的核心服务已运行，`pnpm dev` 会在构建或启动前报告冲突。可继续使用原服务及其已配置的地址，或明确执行 `docker compose stop server` 后再运行 `pnpm dev`。已停止的核心会按开发配置重新构建、启动，并在本次退出时停止。
+
+已有 PostgreSQL 数据卷不会因环境变量变化而更改角色密码。若数据卷由旧配置初始化，先在 `.env` 设置新的私有 `PGPASSWORD`，并移除旧 `DATABASE_URL` 中的密码（node-postgres 优先使用 URI 内的显式密码），然后执行 `docker compose exec postgres psql -U isola -d isola`，在 psql 中用 `\password isola` 交互输入同一密码并用 `\q` 退出。再执行 `docker compose up -d --no-deps --force-recreate server` 让核心使用新凭据，或停止核心后运行 `pnpm dev`。此操作更改原生角色密码并保留数据卷。
 
 从仓库根目录测试（默认测试 PostgreSQL 地址见示例 README）：
 

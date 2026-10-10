@@ -26,6 +26,8 @@ let plain: { id: string };
 let failed: { id: string };
 let upgrade: { id: string };
 let mismatch: { id: string };
+let unready: { id: string };
+let startFailure: { id: string };
 let next: { id: string };
 let coreRoutes: string;
 const signupOrigin = 'http://localhost:3000';
@@ -48,6 +50,7 @@ before(async () => {
   }
   await exec('docker', ['build', '-t', 'isola-test-backend', '-f', 'test/fixtures/backend/Dockerfile', '.']);
   await exec('docker', ['build', '-t', 'isola-test-unhealthy', '--build-arg', 'HEALTH_VERSION=wrong', '-f', 'test/fixtures/backend/Dockerfile', '.']);
+  await exec('docker', ['build', '-t', 'isola-test-unready', '--build-arg', 'HEALTH_VERSION=unready', '-f', 'test/fixtures/backend/Dockerfile', '.']);
   const publish = async (name: string, version: string, image?: string) => {
     const response = await app.inject({ method: 'POST', url: '/api/market/releases', headers: { cookie, 'content-type': 'application/octet-stream' }, payload: await npmPackage({ ...manifest, name, version, isola: { ...manifest.isola, ...(image ? { server: { image } } : {}) } }) });
     assert.equal(response.statusCode, 201, response.body);
@@ -59,6 +62,8 @@ before(async () => {
   failed = await publish('@isola-test/failure', '1.0.0', 'invalid.invalid/missing:image');
   upgrade = await publish('@isola-test/install', '2.0.0', 'invalid.invalid/missing:image');
   mismatch = await publish('@isola-test/install', '3.0.0', 'isola-test-unhealthy');
+  unready = await publish('@isola-test/unready', '1.0.0', 'isola-test-unready');
+  startFailure = await publish('@isola-test/start-failure', '1.0.0', 'isola-test-backend');
   next = await publish('@isola-test/install', '1.0.1', 'isola-test-backend');
 });
 
@@ -117,6 +122,7 @@ test('real backend concurrent installation reuses one healthy container and uniq
 test('failed first backend startup returns 502 and records no installation', async () => {
   const response = await install(failed.id);
   assert.equal(response.statusCode, 502, response.body);
+  assert.deepEqual(response.json(), { statusCode: 502, error: 'Bad Gateway', message: 'Plugin backend container creation failed' });
   assert.equal((await database.db.query('SELECT * FROM installations WHERE release_id = $1', [failed.id])).rowCount, 0);
 });
 
@@ -158,7 +164,10 @@ test('uninstalled and forged plugin identity cannot invoke another release', asy
 });
 
 test('mismatched health fails installation and removes only the new container', async () => {
-  assert.equal((await install(mismatch.id)).statusCode, 502);
+  const response = await install(mismatch.id);
+  assert.equal(response.statusCode, 502);
+  assert.deepEqual(response.json(), { statusCode: 502, error: 'Bad Gateway', message: 'Backend health does not match its release' });
+  assert.equal((await database.db.query('SELECT * FROM installations WHERE release_id = $1', [mismatch.id])).rowCount, 0);
   await assert.rejects(exec('docker', ['inspect', `isola-${mismatch.id}`]));
   assert.equal((await database.db.query('SELECT release_id FROM installations WHERE user_id = $1 AND plugin_name = $2', [userId, '@isola-test/install'])).rows[0].release_id, release.id);
   assert.deepEqual(await (await call(release.id, '/notes')).json(), [{ body: 'preserve my note' }]);
@@ -185,6 +194,22 @@ test('proxy uses native session identity, never forwards cookies, and preserves 
   assert.equal((await call(release.id, '/empty')).status, 204);
 });
 
+test('unready backend reports readiness failure without recording an installation', async () => {
+  const response = await install(unready.id);
+  assert.equal(response.statusCode, 502);
+  assert.deepEqual(response.json(), { statusCode: 502, error: 'Bad Gateway', message: 'Backend did not become healthy' });
+  assert.equal((await database.db.query('SELECT * FROM installations WHERE release_id = $1', [unready.id])).rowCount, 0);
+  await assert.rejects(exec('docker', ['inspect', `isola-${unready.id}`]));
+});
+
+test('container start failure returns a safe operation reason without an installation', async () => {
+  await exec('docker', ['create', '--name', `isola-${startFailure.id}`, '--entrypoint', '/isola-test-missing-executable', 'isola-test-backend']);
+  const response = await install(startFailure.id);
+  assert.equal(response.statusCode, 502);
+  assert.deepEqual(response.json(), { statusCode: 502, error: 'Bad Gateway', message: 'Plugin backend container start failed' });
+  assert.equal((await database.db.query('SELECT * FROM installations WHERE release_id = $1', [startFailure.id])).rowCount, 0);
+});
+
 test('fixed upstream origin survives double-slash paths and upstream redirects', async () => {
   const response = await call(release.id, '//outside.invalid/echo');
   assert.equal(response.status, 200);
@@ -207,6 +232,26 @@ test('each plugin has a separate database role and Docker network', async () => 
   assert.equal(Object.keys(egress.Containers).length, 1);
   const url = new URL(a.Config.Env.find((value: string) => value.startsWith('DATABASE_URL=')).slice(13));
   const bUrl = new URL(b.Config.Env.find((value: string) => value.startsWith('DATABASE_URL=')).slice(13));
+  assert.ok(!a.Config.Env.some((value: string) => /^(PGPASSWORD|POSTGRES_PASSWORD)=/.test(value)));
+  const proof = await exec('docker', ['exec', `isola-${release.id}`, 'node', '--input-type=module', '-e', `
+    import assert from 'node:assert/strict';
+    import { Pool } from 'pg';
+    const own = new Pool({ connectionString: process.env.DATABASE_URL });
+    try { await own.query('SELECT * FROM notes'); } finally { await own.end(); }
+    const url = new URL(process.env.DATABASE_URL);
+    for (const target of [process.argv[1], process.argv[2]]) {
+      url.pathname = target;
+      const foreign = new Pool({ connectionString: url.toString() });
+      try { await assert.rejects(foreign.query('SELECT * FROM plugins'), /permission denied/); }
+      finally { await foreign.end(); }
+    }
+    url.username = 'isola'; url.password = 'isola'; url.pathname = '/postgres';
+    const publicLogin = new Pool({ connectionString: url.toString() });
+    try { await assert.rejects(publicLogin.query('SELECT 1'), /password authentication failed/); }
+    finally { await publicLogin.end(); }
+    console.log('Plugin network: own role works; foreign/framework/public-admin access denied');
+  `, bUrl.pathname, `/${(await database.db.query('SELECT current_database() AS name')).rows[0].name}`]);
+  assert.match(proof.stdout, /own role works; foreign\/framework\/public-admin access denied/);
   const plugin = new Pool({ connectionString: url.toString() });
   try {
     assert.equal((await plugin.query('SELECT body FROM notes WHERE user_id = $1', [userId])).rows[0].body, 'preserve my note');
