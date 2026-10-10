@@ -10,3 +10,4 @@ target/
 Thumbs.db
 test-results/
 playwright-report/
+data/

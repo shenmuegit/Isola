@@ -1,0 +1,27 @@
+{
+  "name": "@isola/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node --env-file=../../.env src/index.ts",
+    "test": "node --test test/market.test.ts"
+  },
+  "dependencies": {
+    "@fastify/ajv-compiler": "4.0.5",
+    "@fastify/static": "10.1.6",
+    "@isola/plugin": "workspace:*",
+    "better-auth": "1.7.7",
+    "fastify": "5.12.5",
+    "pg": "8.23.1",
+    "semver": "7.7.4",
+    "tar": "7.5.22",
+    "validate-npm-package-name": "7.0.1"
+  },
+  "devDependencies": {
+    "@types/pg": "8.20.0",
+    "@types/semver": "7.7.1",
+    "@types/validate-npm-package-name": "4.0.2"
+  }
+}

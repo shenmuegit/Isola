@@ -5,6 +5,8 @@
     "moduleResolution": "NodeNext",
     "strict": true,
     "verbatimModuleSyntax": true,
+    "rewriteRelativeImportExtensions": true,
+    "skipLibCheck": true,
     "jsx": "react-jsx",
     "paths": {
       "@isola/plugin": ["./packages/plugin/src/index.ts"],
