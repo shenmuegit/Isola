@@ -85,7 +85,7 @@ const stop = client.subscribe('/events', event => console.log(event));
 // 在组件卸载时调用 stop()。
 ```
 
-`request<T>(path, options?)` 支持 `GET`（默认）、`POST`、`PUT`、`DELETE`。普通对象作为 JSON，`File` / `Blob` 保持浏览器原生请求体。JSON 响应作为结果，HTTP 204 返回 `undefined`，非成功 HTTP 状态拒绝 Promise。`subscribe(path, listener)` 通过 SSE 接收 JSON 数据，返回取消订阅函数。
+`request<T>(path, options?)` 支持 `GET`（默认）、`POST`、`PUT`、`DELETE`。普通对象作为 JSON，`File` / `Blob` 保持浏览器原生请求体。JSON 响应作为结果，HTTP 204 返回 `undefined`，非成功 HTTP 状态拒绝 Promise。`subscribe(path, listener)` 通过 SSE 接收 JSON 数据，返回取消订阅函数。插件离开时内部通道发送 `disconnect`，宿主清理该通道的请求与订阅。
 
 有后端时使用框架传入的 `DATABASE_URL` 访问独立插件 PostgreSQL 数据库。HTTP 监听 `PORT=3000`；业务查询按可信 `x-isola-user-id` 限定用户数据。直接沿用示例的原生事务初始化与 `/health`：先读取镜像内清单，核对 `ISOLA_PLUGIN_NAME` / `ISOLA_PLUGIN_VERSION`，初始化成功后由 `/health` 返回 `{ name, version, apiVersion }`。健康信息来自镜像内清单。
 
@@ -147,3 +147,11 @@ curl --fail-with-body --cookie session.cookies \
 ```
 
 也可直接在宿主“插件市场”选择 `.tgz`，点击“发布”。发布成功后点击“安装”，完成后点击“打开”。发布和安装错误显示服务端原因；安装成功前不提供打开入口。`session.cookies` 需由同一框架服务端的登录会话取得。发布成功返回 HTTP 201 和 release `id`；`GET /api/market/releases` 列出发布版本，已登录用户可向 `POST /api/installations` 发送 `{ "releaseId": "返回的 id" }` 安装。
+
+## 客户端配置与验证范围
+
+当前只验收 Web，Windows 使用同一 Web 客户端。Grove 尚未克隆或接入；SDK 未发布到 npm。浏览器证据与未完成项见[验收记录](acceptance.md)。
+
+`apps/client/src-tauri` 由官方 Tauri 2 CLI 生成。外壳直接加载框架宿主：`build.devUrl` 为已验证的 `pnpm dev` 地址 `http://localhost:5173`，`build.frontendDist` 是本地核心服务 `http://localhost:3000`。前者用于开发，后者在发布构建时加载远程宿主，不将另一份插件前端打进外壳。
+
+部署时直接把 `tauri.conf.json` 中这两个 URL 改为目标服务地址，也可使用 Tauri 原生 `--config` 合并 JSON 配置。保持 URL 对应服务端已配置的会话来源。开发时先在仓库根运行 `pnpm dev`，外壳无需另起 Vite。原生工程使用生成的 Rust 2024/最低 Rust 1.90 约定；本次未运行原生构建或设备。详见官方 [URL 配置](https://v2.tauri.app/reference/config/#buildconfig)和[配置合并](https://v2.tauri.app/develop/configuration-files/#extending-the-configuration)。

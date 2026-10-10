@@ -2,7 +2,7 @@
 
 <h1>Isola</h1>
 
-<p><strong>One plugin. Four clients.</strong></p>
+<p><strong>One plugin. A shared Web client.</strong></p>
 <p>A shared home for independent tools.</p>
 
 <p>
@@ -22,12 +22,12 @@
 
 ---
 
-Isola is an open-source framework being designed for community-built React plugins across **Web, Windows, macOS, and iPhone**.
+Isola is an open-source framework for community-built React plugins. The SDK, Web client, server, marketplace and official notes template are implemented. **Windows uses the Web client; current acceptance is Web only.**
 
 Plugin authors define their tools and business layouts. Isola provides the common client environment, server integration, installation flow, and adaptation across its supported clients.
 
 > [!NOTE]
-> **Web development preview.** The local SDK, real sessions, marketplace, Docker installation and official notes example are runnable. Windows uses the Web client. Native clients have not been verified, and the SDK is not published to npm.
+> **Web development preview.** Real sessions, marketplace publishing, Docker installation, saving and reopening notes have passed browser acceptance. A minimal Tauri 2 shell configuration is included; native Windows, macOS and iPhone clients have not been built or run. The SDK is not published to npm. See [acceptance evidence and pending checks](docs/acceptance.md).
 
 Requires Node.js 24, pnpm 10, Docker Engine and Compose. Copy `.env.example` to `.env`, set a random `BETTER_AUTH_SECRET`, then run:
 
@@ -42,24 +42,24 @@ Open `http://localhost:5173`, create an account, publish `examples/notes/isola-e
 
 | Plugin authors decide | Isola takes responsibility for |
 | --- | --- |
-| Business features and React content | The shared client environment and four-client adaptation |
+| Business features and React content | The shared Web client environment and layout adaptation |
 | Regions, composition, and layout constraints | Reflow, scrolling, focus, and input behavior within the public component contract |
 | Optional server-side business logic | Installation and connection between plugin frontends and backends |
 
-Plugins target Isola's documented contracts. The framework maintains client-specific behavior and verifies the same plugin artifact on each supported client.
+Plugins target Isola's public SDK and use one frontend artifact. The framework maintains layout adaptation; verified browser coverage and unverified native targets are recorded separately.
 
 ## 🏗️ How the pieces fit
 
-The proposed architecture connects a shared React client, a framework server, community plugins, and a plugin marketplace.
+The architecture connects a shared React client, a framework server, community plugins, and a plugin marketplace.
 
 ```mermaid
 flowchart LR
-    accTitle: Isola Proposed Plugin Architecture
-    accDescr: The marketplace supplies plugin releases. The framework server installs them, and four client targets load the same React plugin artifact and access its optional backend.
+    accTitle: Isola Plugin Architecture
+    accDescr: The marketplace supplies plugin releases. The framework server installs them, and the shared Web client loads the React plugin artifact and accesses its optional backend.
 
     marketplace["Plugin marketplace"]
     server["Framework server"]
-    clients["Shared React client<br/>Web · Windows · macOS · iPhone"]
+    clients["Shared React Web client<br/>Windows uses Web"]
     plugin["React plugin"]
     backend["Optional plugin backend"]
 
@@ -70,7 +70,7 @@ flowchart LR
     server -->|Business requests| backend
 ```
 
-The proposed stack uses React, TypeScript, and Vite for the common interface; Tauri 2 for native client shells; and Node.js, Fastify, PostgreSQL, and Docker for server-side integration. Details and platform requirements are in the [architecture document](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md).
+The stack uses React, TypeScript, and Vite for the common interface, and Node.js, Fastify, PostgreSQL, and Docker for server-side integration. The Tauri 2 shell uses native URL configuration to load that same host; native execution remains unverified. Details and platform requirements are in the [architecture document](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md).
 
 ## 🧩 Your plugin, your layout
 
@@ -108,7 +108,7 @@ export function NotesLayout({ list, editor, actions }: {
 }
 ```
 
-The author defines the structure once. Framework components adapt to the space their container provides, with stable React nodes during size changes. Four-client support applies to layouts and interactions that follow the public component contract.
+The author defines the structure once. Framework components adapt to the space their container provides, with stable React nodes during size changes. Current Web acceptance covers layouts and interactions within the public component contract.
 
 See the [layout interface and adaptation rules](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md#插件自定义布局接口) for types, defaults, examples, and acceptance criteria.
 
@@ -123,13 +123,14 @@ cd Isola
 | --- | --- |
 | [Architecture](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md) | Clients, server, plugin delivery, marketplace, and adaptation responsibilities |
 | [Layout contract](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md#插件自定义布局接口) | Composable React layouts and framework-owned responsive behavior |
-| [Implementation plan](docs/superpowers/plans/2026-10-10-react-plugin-framework-first-version.md) | Seven implementation tasks, interfaces, and verification requirements |
+| [Implementation plan](docs/superpowers/plans/2026-10-10-react-plugin-framework-first-version.md) | Implementation steps and current Web acceptance scope |
+| [Acceptance](docs/acceptance.md) | Verified commands, browser cases and unresolved checks |
 
 The detailed design documents are currently written in Simplified Chinese.
 
 ## 🤝 Contributing
 
-Contributions are welcome. At this stage, useful work includes reviewing the plugin contract, testing the layout assumptions, and implementing tasks from the plan.
+Contributions are welcome. Useful work includes building plugins against the public SDK and reporting reproducible issues with validation results.
 
 Start with the [architecture](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md) and [implementation plan](docs/superpowers/plans/2026-10-10-react-plugin-framework-first-version.md). Use [issues](https://github.com/shenmuegit/Isola/issues) to discuss a focused proposal, or submit a [pull request](https://github.com/shenmuegit/Isola/pulls) with its purpose and validation results.
 
