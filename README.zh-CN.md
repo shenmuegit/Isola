@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1>Isola <sub>栖屿</sub></h1>
+<h1>Isola</h1>
 
 <p><strong>一次开发，四端使用。</strong></p>
 <p>让不同的工具各有空间，又归于一处。</p>
@@ -22,7 +22,7 @@
 
 ---
 
-Isola（栖屿）是一个正在设计中的开源 React 插件框架，面向 **Web、Windows、macOS 和 iPhone**。
+Isola 是一个正在设计中的开源 React 插件框架，面向 **Web、Windows、macOS 和 iPhone**。
 
 插件开发者决定业务功能和布局，框架负责共同运行环境、服务端接入、安装流程，以及支持客户端之间的适配。
 

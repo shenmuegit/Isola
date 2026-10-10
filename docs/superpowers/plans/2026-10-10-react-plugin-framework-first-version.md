@@ -8,7 +8,7 @@
 
 **Tech Stack:** Node.js 24、pnpm 10、TypeScript、React、Vite、Fastify、PostgreSQL、Docker、Tauri 2。会话接入使用 Better Auth 原生 Fastify 集成，归档使用 npm 打包格式和 node-tar；测试使用 Node 测试运行器及 Playwright。[^1][^2]
 
-**Spec:** [Isola（栖屿）技术方案](../specs/2026-10-10-react-plugin-framework-design.md)。本文是待评审的实现约定，下面列出的代码文件、接口和命令均需要实现。
+**Spec:** [Isola 技术方案](../specs/2026-10-10-react-plugin-framework-design.md)。本文是待评审的实现约定，下面列出的代码文件、接口和命令均需要实现。
 
 ## 📋 全局约束
 

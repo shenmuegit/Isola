@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1>Isola <sub>栖屿</sub></h1>
+<h1>Isola</h1>
 
 <p><strong>One plugin. Four clients.</strong></p>
 <p>A shared home for independent tools.</p>
