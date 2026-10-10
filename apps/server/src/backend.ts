@@ -41,7 +41,7 @@ export async function startBackend(db: Pool, release: PublishedRelease): Promise
     const revoke = await client.query('SELECT format(\'REVOKE ALL ON DATABASE %I FROM PUBLIC\', $1::text) AS sql', [database]);
     await client.query(revoke.rows[0].sql);
     const network = `isola-${database}`;
-    if (!await inspect('network', network)) await docker('network', 'create', '--internal', network);
+    if (!await inspect('network', network)) await docker('network', 'create', network);
     for (const container of [process.env.HOSTNAME, process.env.POSTGRES_CONTAINER]) {
       if (!container) throw new Error('Core and PostgreSQL container identities are required');
       const state = await inspect('container', container);

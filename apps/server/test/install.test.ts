@@ -112,6 +112,27 @@ test('failed first backend startup returns 502 and records no installation', asy
   assert.equal((await database.db.query('SELECT * FROM installations WHERE release_id = $1', [failed.id])).rowCount, 0);
 });
 
+test('plugin backend can call a controlled HTTP endpoint outside its own network', async () => {
+  assert.equal((await install(release.id)).statusCode, 201);
+  const endpoint = (await exec('docker', ['run', '--rm', '-d', '--network', 'host', 'node:24-bookworm-slim', 'node', '-e',
+    'const server = require("node:http").createServer((req, res) => res.end("controlled egress")); server.listen(0, "0.0.0.0", () => console.log(server.address().port));',
+  ])).stdout.trim();
+  try {
+    const bridge = JSON.parse((await exec('docker', ['network', 'inspect', 'bridge'])).stdout)[0];
+    let port = '';
+    for (let attempt = 0; attempt < 100 && !port; attempt++) {
+      port = (await exec('docker', ['logs', endpoint])).stdout.trim();
+      if (!port) await setTimeout(50);
+    }
+    assert.match(port, /^\d+$/);
+    const url = `http://${bridge.IPAM.Config[0].Gateway}:${port}`;
+    const result = await exec('docker', ['exec', `isola-${release.id}`, 'node', '-e',
+      'fetch(process.argv[1], { signal: AbortSignal.timeout(2000) }).then(response => response.text()).then(console.log)', url,
+    ]);
+    assert.equal(result.stdout.trim(), 'controlled egress');
+  } finally { await exec('docker', ['rm', '-f', endpoint]); }
+});
+
 test('failed upgrade preserves the working release and its actual PostgreSQL business data', async () => {
   assert.equal((await install(release.id)).statusCode, 201);
   const saved = await fetch(`${origin}/api/plugins/${release.id}/api/notes`, { method: 'POST', headers: { cookie, 'content-type': 'text/plain' }, body: 'preserve my note' });
@@ -163,14 +184,13 @@ test('fixed upstream origin survives double-slash paths and upstream redirects',
   assert.equal((await call(release.id, '/redirect')).status, 502);
 });
 
-test('each plugin has a separate database role and internal Docker network', async () => {
+test('each plugin has a separate database role and Docker network', async () => {
   assert.equal((await install(second.id)).statusCode, 201);
   const inspect = async (id: string) => JSON.parse((await exec('docker', ['inspect', `isola-${id}`])).stdout)[0];
   const a = await inspect(release.id);
   const b = await inspect(second.id);
   assert.notDeepEqual(Object.keys(a.NetworkSettings.Networks), Object.keys(b.NetworkSettings.Networks));
   const network = JSON.parse((await exec('docker', ['network', 'inspect', Object.keys(a.NetworkSettings.Networks)[0]!])).stdout)[0];
-  assert.equal(network.Internal, true);
   assert.equal(Object.keys(network.Containers).length, 3);
   const url = new URL(a.Config.Env.find((value: string) => value.startsWith('DATABASE_URL=')).slice(13));
   const bUrl = new URL(b.Config.Env.find((value: string) => value.startsWith('DATABASE_URL=')).slice(13));
