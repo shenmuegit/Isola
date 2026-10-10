@@ -35,7 +35,7 @@ export function connect(): Promise<PluginClient> {
       const close = () => {
         if (closed) return;
         closed = true;
-        for (const [id] of subscriptions) port.postMessage({ type: 'unsubscribe', id } satisfies BridgeMessage);
+        port.postMessage({ type: 'disconnect' } satisfies BridgeMessage);
         subscriptions.clear();
         for (const request of requests.values()) {
           window.clearTimeout(request.timer);

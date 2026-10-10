@@ -85,6 +85,7 @@ interface PluginClient {
 }
 
 type BridgeMessage =
+  | { type: 'disconnect' }
   | { type: 'request'; id: string; path: string; options?: RequestOptions }
   | { type: 'subscribe'; id: string; path: string }
   | { type: 'unsubscribe'; id: string }
@@ -96,6 +97,8 @@ type BridgeMessage =
 `connect(): Promise<PluginClient>` 获取绑定到当前 iframe 的通道。插件只提供相对业务路径和业务数据；普通对象按 JSON 请求体发送，`File` / `Blob` 保持浏览器原生请求体。宿主根据实际加载的插件确定调用目标；用户身份由框架服务端的原生会话接入提供。订阅使用服务端 SSE，宿主通过 MessageChannel 将事件送到插件。
 
 连接初始化使用 `Window.postMessage` 发送 `{ type: 'isola:connect', apiVersion: 1 }`；宿主以相同标记和转交的 MessagePort 回应。双方检查实际父子窗口来源。业务响应采用 JSON，HTTP `204` 返回 `undefined`，非成功 HTTP 响应以明确错误拒绝请求。
+
+插件离开时在已绑定的 MessageChannel 上发送 `disconnect`，宿主清理该通道的请求与订阅。
 
 ### 插件自定义布局接口
 

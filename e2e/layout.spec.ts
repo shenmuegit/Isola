@@ -100,3 +100,17 @@ test('ListDetail breakpoint follows its own container and current rem size', asy
   await expect(plugin.getByLabel('内容')).toBeEnabled();
   expect(await plugin.getByRole('region', { name: '详情', exact: true }).evaluate(e => (e as HTMLElement).inert)).toBe(false);
 });
+
+test('nested ListDetail selection only hides its own panes', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto(host('nested-detail'));
+  const plugin = page.frameLocator('iframe[title="插件"]');
+  await plugin.getByRole('button', { name: '选择内层笔记' }).click();
+  await expect(plugin.getByLabel('内容')).toBeVisible();
+  await expect(plugin.getByText('外层详情')).toBeHidden();
+  await plugin.getByLabel('内容').fill('内层草稿');
+  await plugin.getByRole('button', { name: '返回' }).click();
+  await expect(plugin.getByRole('button', { name: '选择内层笔记' })).toBeVisible();
+  await plugin.getByRole('button', { name: '选择内层笔记' }).click();
+  await expect(plugin.getByLabel('内容')).toHaveValue('内层草稿');
+});

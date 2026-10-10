@@ -36,7 +36,9 @@ export function PluginFrame({ releaseId, entryUrl }: { releaseId: string; entryU
         return url.href;
       };
       port.onmessage = async ({ data }: MessageEvent<BridgeMessage>) => {
-        if (!data || typeof data.id !== 'string') return;
+        if (closed || !data) return;
+        if (data.type === 'disconnect') { close(); return; }
+        if (typeof data.id !== 'string') return;
         try {
           if (data.type === 'unsubscribe') {
             subscriptions.get(data.id)?.close();

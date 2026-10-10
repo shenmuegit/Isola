@@ -9,6 +9,7 @@ export interface PluginClient {
 }
 
 export type BridgeMessage =
+  | { type: 'disconnect' }
   | { type: 'request'; id: string; path: string; options?: RequestOptions }
   | { type: 'subscribe'; id: string; path: string }
   | { type: 'unsubscribe'; id: string }

@@ -36,6 +36,7 @@ function Fixture() {
     <output>{output}</output>
   </Stack>;
   if (mode === 'detail') return <ListDetail hasSelection={selected} onBack={() => setSelected(false)} list={<button onClick={() => setSelected(true)}>选择笔记</button>} detail={<Editor />} />;
+  if (mode === 'nested-detail') return <ListDetail hasSelection={false} onBack={() => {}} list={<ListDetail hasSelection={selected} onBack={() => setSelected(false)} list={<button onClick={() => setSelected(true)}>选择内层笔记</button>} detail={<Editor />} />} detail="外层详情" />;
   if (mode === 'input') return <Stack><Pane label="表单"><div style={{ height: 1200 }}>业务内容</div><Editor /><button>保存</button></Pane></Stack>;
   if (mode === 'default') return <Columns><Pane label="默认一"><Editor /></Pane><Pane label="默认二">第二个区域</Pane></Columns>;
   if (mode === 'nested') return <Columns><Pane label="外层一" flexBasis={360}><Columns gap={24}><Pane label="内层一" flexBasis={240}>一</Pane><Pane label="内层二" flexBasis={240}>二</Pane></Columns></Pane><Pane label="外层二" flexBasis={800}>外部</Pane></Columns>;

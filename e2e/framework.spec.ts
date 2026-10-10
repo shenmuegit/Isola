@@ -153,7 +153,26 @@ test('leaving the plugin rejects pending business requests', async ({ page }) =>
   await expect(plugin.locator('output')).toContainText('connection closed');
 });
 
-test('a late close event from an old channel leaves the replacement channel usable', async ({ page }) => {
+test('actual plugin departure aborts the host fetch before the next iframe load', async ({ page }) => {
+  let aborted = false;
+  page.on('requestfailed', request => { if (new URL(request.url()).pathname.endsWith('/api/slow')) aborted = true; });
+  await page.route('**/api/plugins/test-release/api/slow', () => {});
+  await page.route('**/departure-pending-image', () => {});
+  await page.route('**/departing', route => route.fulfill({ contentType: 'text/html; charset=utf-8', body: '<!doctype html><meta charset="UTF-8"><p>Departing fixture</p><img src="/departure-pending-image" alt="loading">' }));
+  await page.goto(host);
+  const requested = page.waitForRequest('**/api/plugins/test-release/api/slow');
+  await page.frameLocator('iframe[title="插件"]').getByRole('button', { name: '超时请求' }).click();
+  await requested;
+  await page.locator('iframe[title="插件"]').evaluate(frame => {
+    frame.addEventListener('load', () => { frame.dataset.departureLoaded = 'true'; });
+    (frame as HTMLIFrameElement).src = '/departing';
+  });
+  await expect(page.frameLocator('iframe[title="插件"]').getByText('Departing fixture')).toBeVisible();
+  await expect.poll(() => aborted, { timeout: 5000 }).toBe(true);
+  await expect(page.locator('iframe[title="插件"]')).not.toHaveAttribute('data-departure-loaded', 'true');
+});
+
+test('late close and disconnect messages from an old channel leave the replacement usable', async ({ page }) => {
   await page.addInitScript(() => {
     const ports: MessagePort[] = [];
     Object.assign(window, { observedPorts: ports });
@@ -175,7 +194,11 @@ test('a late close event from an old channel leaves the replacement channel usab
       Object.assign(window, { replacementPort: port });
     }
   });
-  await page.evaluate(() => (window as unknown as { observedPorts: MessagePort[] }).observedPorts.at(-2)!.dispatchEvent(new Event('close')));
+  await page.evaluate(() => {
+    const oldPort = (window as unknown as { observedPorts: MessagePort[] }).observedPorts.at(-2)!;
+    oldPort.dispatchEvent(new Event('close'));
+    oldPort.dispatchEvent(new MessageEvent('message', { data: { type: 'disconnect' } }));
+  });
   const result = await frame.evaluate(() => new Promise<{ type: string; data?: unknown }>(resolve => {
     const port = (window as unknown as { replacementPort: MessagePort }).replacementPort;
     port.onmessage = event => resolve(event.data);

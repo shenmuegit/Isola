@@ -41,6 +41,7 @@ const clientSelection: PluginManifest = {
 
 const options: RequestOptions = { method: 'POST', body: { text: 'hello' } };
 const messages: BridgeMessage[] = [
+  { type: 'disconnect' },
   { type: 'request', id: '1', path: '/notes', options },
   { type: 'subscribe', id: '2', path: '/notes/events' },
   { type: 'unsubscribe', id: '2' },

@@ -22,8 +22,8 @@
 @container (width < 48rem) {
   .isola-list-detail-panes { display: block; }
   .isola-back { display: block; }
-  .isola-list-detail[data-selected="true"] .isola-list,
-  .isola-list-detail[data-selected="false"] .isola-detail { display: none; }
+  .isola-list-detail[data-selected="true"] > .isola-list-detail-panes > .isola-list,
+  .isola-list-detail[data-selected="false"] > .isola-list-detail-panes > .isola-detail { display: none; }
 }
 .isola-pane :where(input, textarea, select, button),
 .isola-list-detail :where(input, textarea, select, button) {
