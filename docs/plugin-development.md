@@ -154,7 +154,7 @@ curl --fail-with-body --cookie session.cookies \
   http://localhost:3000/api/market/releases
 ```
 
-也可直接在宿主“插件市场”选择 `.tgz`，点击“发布”。发布成功后点击“安装”，完成后点击“打开”。发布和安装错误显示服务端原因；安装成功前不提供打开入口。`session.cookies` 需由同一框架服务端的登录会话取得。发布成功返回 HTTP 201 和 release `id`；`GET /api/market/releases` 列出发布版本，已登录用户可向 `POST /api/installations` 发送 `{ "releaseId": "返回的 id" }` 安装。
+也可直接在宿主“插件市场”选择 `.tgz`，点击“发布”。发布成功后点击“安装”，完成后点击“打开”。同一插件以 `name` 为唯一标识，市场只显示一张卡片；已安装时显示当前版本，新版本通过同一张卡片的“更新”操作覆盖安装。成功后原安装记录指向新版本，失败保留原版本与数据。`session.cookies` 需由同一框架服务端的登录会话取得。发布成功返回 HTTP 201 和 release `id`；`GET /api/market/releases` 按 npm SemVer 列出每个插件的最新发布版本，已登录用户可向 `POST /api/installations` 发送 `{ "releaseId": "返回的 id" }` 安装。
 
 ## 客户端配置与验证范围
 

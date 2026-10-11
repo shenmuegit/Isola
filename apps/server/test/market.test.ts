@@ -168,3 +168,27 @@ test('concurrent duplicate publication keeps one record and one release director
   assert.equal(rows.rowCount, 1);
   assert.equal((await readdir(dataDir)).length, 4);
 });
+
+test('market lists each plugin once and updating replaces the existing installation', async () => {
+  const name = '@isola-test/replace';
+  const releases = new Map<string, string>();
+  for (const version of ['0.1.9', '0.1.10', '0.1.8']) {
+    const response = await publish(await npmPackage({ ...manifest, name, version }));
+    assert.equal(response.statusCode, 201, response.body);
+    releases.set(version, response.json().id);
+  }
+  const listed = (await app.inject({ url: '/api/market/releases' })).json().filter((item: { manifest: { name: string } }) => item.manifest.name === name);
+  assert.equal(listed.length, 1);
+  assert.equal(listed[0].manifest.version, '0.1.10');
+  const install = (version: string) => app.inject({ method: 'POST', url: '/api/installations', headers: { cookie }, payload: { releaseId: releases.get(version) } });
+  assert.equal((await install('0.1.9')).statusCode, 201);
+  const original = (await database.db.query('SELECT id FROM installations WHERE user_id = $1 AND plugin_name = $2', [userId, name])).rows[0].id;
+  assert.equal((await install('0.1.10')).statusCode, 201);
+  const current = (await app.inject({ url: '/api/installations', headers: { cookie } })).json().filter((item: { manifest: { name: string } }) => item.manifest.name === name);
+  assert.equal(current.length, 1);
+  assert.equal(current[0].id, releases.get('0.1.10'));
+  const stored = await database.db.query('SELECT id, release_id FROM installations WHERE user_id = $1 AND plugin_name = $2', [userId, name]);
+  assert.equal(stored.rowCount, 1);
+  assert.equal(stored.rows[0].id, original);
+  assert.equal(stored.rows[0].release_id, releases.get('0.1.10'));
+});

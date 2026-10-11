@@ -4,6 +4,7 @@ import { fromNodeHeaders } from 'better-auth/node';
 import { readFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import type { Pool } from 'pg';
+import { gt } from 'semver';
 import { createAuth, registerAuth } from './auth.ts';
 import { publishPackage, releaseEntryUrl, type PublishedRelease } from './market.ts';
 import { installRelease } from './install.ts';
@@ -53,7 +54,12 @@ export async function buildApp({ db, dataDir, origin }: { db: Pool; dataDir: str
   });
   app.get('/api/market/releases', async () => {
     const result = await db.query<Pick<PublishedRelease, 'id' | 'manifest'>>('SELECT id, manifest FROM releases ORDER BY plugin_name, version');
-    return result.rows.map(release => ({ ...release, entryUrl: releaseEntryUrl(release.id) }));
+    const latest = new Map<string, Pick<PublishedRelease, 'id' | 'manifest'>>();
+    for (const release of result.rows) {
+      const previous = latest.get(release.manifest.name);
+      if (!previous || gt(release.manifest.version, previous.manifest.version)) latest.set(release.manifest.name, release);
+    }
+    return Array.from(latest.values(), release => ({ ...release, entryUrl: releaseEntryUrl(release.id) }));
   });
   await app.register(fastifyStatic, {
     root: resolve(dataDir), serve: false,

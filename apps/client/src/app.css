@@ -121,7 +121,9 @@ h1, h2 { text-wrap: balance; }
 .plugin-card h2 { margin-bottom: 3px; font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
 .version { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .plugin-description { flex: 1; margin: 20px 0 28px; color: var(--muted); font-size: 14px; line-height: 1.8; overflow-wrap: anywhere; }
-.plugin-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.plugin-update { margin-bottom: 16px; color: var(--accent); font-size: 12px; overflow-wrap: anywhere; }
+.plugin-card-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+.plugin-card-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-left: auto; }
 .plugin-card-footer .button { min-width: 88px; }
 .installed-label { display: inline-flex; align-items: center; gap: 7px; color: var(--accent); font-size: 12px; }
 .installed-label::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }

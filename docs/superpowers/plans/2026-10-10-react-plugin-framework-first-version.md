@@ -169,6 +169,8 @@ export declare function ListDetail(props: ListDetailProps): ReactElement;
 
 已实现注册/登录、发布、市场安装、打开及返回市场。实际 TGZ、Better Auth、Docker 后端和 PostgreSQL 贯通，刷新后重新打开笔记保留内容。
 
+按用户确认的覆盖安装规则，市场每个插件 `name` 只显示一张卡片；已安装版本保持可打开，最新版本在同一卡片更新。服务端按 npm SemVer 返回每个插件的最新发布，沿用原生唯一约束和 UPSERT 覆盖同一用户的安装记录；失败不改变原安装。
+
 任务 6 既有结果：`pnpm test` 60/60（三引擎）、核心服务测试 24/24、笔记测试 6/6，类型检查和工作区构建通过。`pnpm dev` 已在 Linux Node/Docker 环境验证正常启动、真实市场使用、停止保留数据和启动中取消；原生 Windows 子进程取消/退出竞态另有 4/4 检查，不代表原生客户端或完整 Windows 开发启动验收。
 
 ### 任务 7：最小外壳与 Web 验收记录
