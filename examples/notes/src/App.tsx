@@ -33,6 +33,10 @@ function App() {
     return () => { active = false; unsubscribe?.(); };
   }, []);
 
+  useEffect(() => client?.registerMenu([
+    { id: 'new-note', label: '新建笔记', disabled: saving, onSelect: () => { setDraft({ id: '', title: '', body: '' }); setStatus(''); } },
+  ]), [client, saving]);
+
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!client || !draft || saving) return;
@@ -51,7 +55,6 @@ function App() {
   }
 
   return <Stack>
-    <h1>笔记</h1>
     {error && <p role="alert">{error}</p>}
     <ListDetail hasSelection={draft !== null} onBack={() => setDraft(null)} list={
       <Pane label="笔记列表">

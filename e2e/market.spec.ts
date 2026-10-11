@@ -40,8 +40,10 @@ test('real session, package publishing, installation and persistent notes', asyn
   await notes.getByRole('button', { name: '打开', exact: true }).click();
   await plugin.getByRole('button', { name: title, exact: true }).click();
   await expect(plugin.getByLabel('内容', { exact: true })).toHaveValue('市场安装后保存的内容');
+  await page.getByRole('button', { name: '菜单', exact: true }).click();
   await page.getByRole('button', { name: '返回市场' }).click();
   await expect(page.getByRole('heading', { name: '插件市场' })).toBeVisible();
+  await page.getByRole('button', { name: '菜单', exact: true }).click();
   await page.getByRole('button', { name: '退出登录' }).click();
   await expect(page.getByLabel('邮箱')).toBeVisible();
 });
@@ -74,6 +76,7 @@ test('frontend composition uses the same package contract and real failed instal
   await composition.getByRole('button', { name: '安装', exact: true }).click();
   await composition.getByRole('button', { name: '打开', exact: true }).click();
   await expect(page.frameLocator('iframe[title="插件"]').getByRole('region', { name: '编辑', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '菜单', exact: true }).click();
   await page.getByRole('button', { name: '返回市场' }).click();
   await page.getByLabel('插件包').setInputFiles({ name: 'failure.tgz', mimeType: 'application/octet-stream', buffer: await npmPackage({ ...manifest, name: `${name}-failure`, isola: { ...manifest.isola, title: `启动失败 ${info.project.name}`, server: { image: 'invalid.invalid/missing:image' } } }) });
   await page.getByRole('button', { name: '发布', exact: true }).click();
@@ -92,6 +95,7 @@ test('frontend composition uses the same package contract and real failed instal
   const crashed = page.waitForEvent('pageerror', error => error.message === 'plugin failure');
   await brokenRelease.getByRole('button', { name: '打开', exact: true }).click();
   await crashed;
+  await page.getByRole('button', { name: '菜单', exact: true }).click();
   await page.getByRole('button', { name: '返回市场' }).click();
   await expect(page.getByRole('heading', { name: '插件市场' })).toBeVisible();
 });

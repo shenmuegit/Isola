@@ -1,7 +1,40 @@
 import { useEffect, useRef } from 'react';
-import type { BridgeMessage } from '@isola/plugin';
+import type { BridgeMessage, PluginMenuItem } from '@isola/plugin';
 
-export function PluginFrame({ releaseId, entryUrl }: { releaseId: string; entryUrl: string }) {
+export function PluginMenuActions({ items, onSelect }: { items: PluginMenuItem[]; onSelect?: () => void }) {
+  const current = useRef(items);
+  current.current = items;
+  return <>{items.map(item => <span className="plugin-menu-action" key={item.id}>
+    <button disabled={item.disabled} onClick={event => {
+      if (item.file) {
+        const input = event.currentTarget.nextElementSibling as HTMLInputElement;
+        input.value = '';
+        // Keep an open picker bound to the registration that opened it.
+        input.onchange = () => {
+          if (current.current !== items) return;
+          const files = Array.from(input.files ?? []);
+          if (files.length) { item.onSelect(files); onSelect?.(); }
+        };
+        input.click();
+      } else { item.onSelect([]); onSelect?.(); }
+    }}>{item.label}</button>
+    {item.file && <input type="file" hidden accept={item.file.accept} multiple={item.file.multiple} />}
+  </span>)}</>;
+}
+
+function validMenu(items: unknown): items is Omit<PluginMenuItem, 'onSelect'>[] {
+  if (!Array.isArray(items)) return false;
+  const ids = new Set<string>();
+  return items.every(item => {
+    if (!item || typeof item !== 'object' || typeof item.id !== 'string' || !item.id || typeof item.label !== 'string' || !item.label || ids.has(item.id)) return false;
+    if (item.disabled !== undefined && typeof item.disabled !== 'boolean') return false;
+    if (item.file !== undefined && (!item.file || typeof item.file !== 'object' || typeof item.file.accept !== 'string' || (item.file.multiple !== undefined && typeof item.file.multiple !== 'boolean'))) return false;
+    ids.add(item.id);
+    return true;
+  });
+}
+
+export function PluginFrame({ releaseId, entryUrl, onMenuChange, onMenuError }: { releaseId: string; entryUrl: string; onMenuChange?: (items: PluginMenuItem[]) => void; onMenuError?: (message: string) => void }) {
   const frame = useRef<HTMLIFrameElement>(null);
   const disconnect = useRef<() => void>(() => {});
 
@@ -14,6 +47,7 @@ export function PluginFrame({ releaseId, entryUrl }: { releaseId: string; entryU
       const requests = new Map<string, AbortController>();
       const subscriptions = new Map<string, EventSource>();
       let closed = false;
+      let menuId: string | undefined;
       const send = (message: BridgeMessage) => { if (!closed) port.postMessage(message); };
       const close = () => {
         if (closed) return;
@@ -24,6 +58,10 @@ export function PluginFrame({ releaseId, entryUrl }: { releaseId: string; entryU
         for (const subscription of subscriptions.values()) subscription.close();
         requests.clear();
         subscriptions.clear();
+        menuId = undefined;
+        onMenuChange?.([]);
+        onMenuError?.('');
+        send({ type: 'disconnect' });
         closed = true;
         port.close();
       };
@@ -40,6 +78,25 @@ export function PluginFrame({ releaseId, entryUrl }: { releaseId: string; entryU
         if (data.type === 'disconnect') { close(); return; }
         if (typeof data.id !== 'string') return;
         try {
+          if (data.type === 'menu-register') {
+            if (!data.id || !validMenu(data.items)) throw new Error('Invalid plugin menu entries');
+            menuId = data.id;
+            onMenuError?.('');
+            onMenuChange?.(data.items.map(item => ({ ...item, onSelect: files => {
+              if (closed || menuId !== data.id || item.disabled) return;
+              onMenuError?.('');
+              send({ type: 'menu-select', id: data.id, itemId: item.id, files });
+            } })));
+            return;
+          }
+          if (data.type === 'menu-unregister') {
+            if (menuId === data.id) { menuId = undefined; onMenuChange?.([]); onMenuError?.(''); }
+            return;
+          }
+          if (data.type === 'menu-error') {
+            if (menuId === data.id && typeof data.message === 'string') onMenuError?.(data.message);
+            return;
+          }
           if (data.type === 'unsubscribe') {
             subscriptions.get(data.id)?.close();
             subscriptions.delete(data.id);
@@ -83,6 +140,7 @@ export function PluginFrame({ releaseId, entryUrl }: { releaseId: string; entryU
             requests.delete(data.id);
           }
         } catch (error) {
+          if (data.type === 'menu-register') onMenuError?.(error instanceof Error ? error.message : String(error));
           send({ type: 'error', id: data.id, message: error instanceof Error ? error.message : String(error) });
         }
       };
@@ -92,7 +150,7 @@ export function PluginFrame({ releaseId, entryUrl }: { releaseId: string; entryU
     };
     window.addEventListener('message', connect);
     return () => { window.removeEventListener('message', connect); disconnect.current(); };
-  }, [releaseId, entryUrl]);
+  }, [releaseId, entryUrl, onMenuChange, onMenuError]);
 
   return <iframe ref={frame} title="插件" sandbox="allow-scripts allow-forms" src={entryUrl} onLoad={() => disconnect.current()} style={{ display: 'block', width: '100%', height: '100%', border: 0 }} />;
 }

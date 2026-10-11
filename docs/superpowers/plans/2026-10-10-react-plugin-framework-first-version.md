@@ -187,3 +187,7 @@ export declare function ListDetail(props: ListDetailProps): ReactElement;
 [^6]: Radix Themes. [Layout](https://www.radix-ui.com/themes/docs/overview/layout)
 [^7]: Every Layout. [The Sidebar](https://every-layout.dev/layouts/sidebar/)
 [^8]: Radix Themes community. [Layout API ergonomics discussion](https://github.com/radix-ui/themes/discussions/96)
+
+## 统一菜单后续实现
+
+2026-10-11 的[统一菜单任务](2026-10-11-unified-plugin-menu.md)已在源码实现 SDK 0.1.1 `registerMenu`、单宿主标题栏、安装入口与市场共享状态，以及 Grove 0.1.5 适配。接口版本仍为 1，沿用现有绑定通道、原生 Popover 与文件输入；实际预览安装与数据保留验收由该任务单独记录。

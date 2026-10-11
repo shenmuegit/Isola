@@ -80,19 +80,20 @@ h1, h2 { text-wrap: balance; }
 .auth-submit { width: 100%; min-height: 48px; margin-top: 6px; font-size: 15px; }
 .auth-switch { margin-top: 24px; color: var(--muted); font-size: 14px; text-align: center; }
 
-.shell-header { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 76px; padding: 14px 36px; border-bottom: 1px solid var(--line); background: #fafbf8; }
-.shell-identity, .shell-account { display: flex; align-items: center; min-width: 0; }
-.shell-identity { gap: 26px; }
-.shell-context { padding-left: 26px; border-left: 1px solid var(--line); color: var(--muted); font-size: 13px; white-space: nowrap; }
-.shell-account { gap: 10px; }
-.user-avatar { display: grid; place-items: center; flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: #e5ecdc; color: #335c40; font-size: 13px; font-weight: 600; }
-.user-name { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
-.shell-account .button { margin-left: 6px; padding-inline: 12px; }
-.shell-error { margin: 12px 24px; }
-.plugin-toolbar { flex-shrink: 0; display: flex; align-items: center; gap: 16px; min-height: 58px; padding: 6px 24px; border-bottom: 1px solid var(--line); background: #fff; }
-.back-button { flex-shrink: 0; padding-inline: 10px; }
-.back-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.plugin-toolbar-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 550; }
+.shell-header { flex-shrink: 0; display: flex; align-items: center; gap: 14px; height: 52px; padding: 4px 16px; border-bottom: 1px solid var(--line); background: #fafbf8; }
+.shell-header .brand { font-size: 19px; gap: 8px; }
+.shell-header .brand-mark { width: 26px; height: 26px; border-radius: 7px; }
+.menu-toggle { flex-shrink: 0; padding: 8px; min-width: 40px; min-height: 40px; font-size: 21px; }
+.shell-page { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-left: 14px; border-left: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+.workspace-menu { position: fixed; inset: 58px auto auto 12px; margin: 0; width: 250px; max-width: calc(100vw - 24px); max-height: calc(100dvh - 70px); overflow: auto; padding: 6px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); box-shadow: 0 6px 24px #233b301a; }
+.menu-group { display: flex; flex-direction: column; padding: 4px 0; }
+.menu-group + .menu-group { border-top: 1px solid var(--line); }
+.workspace-menu button { display: block; width: 100%; min-height: 40px; padding: 9px 12px; border: 0; border-radius: 5px; background: transparent; color: inherit; text-align: left; font-size: 14px; }
+.workspace-menu button:hover:not(:disabled), .workspace-menu button[aria-current=page] { background: #edf2e7; }
+.menu-user { padding: 8px 12px; overflow-wrap: anywhere; font-size: 12px; color: var(--muted); }
+.plugin-menu-action { display: contents; }
+.shell-error { margin: 8px 16px; }
+.shell-status { padding: 8px 16px; font-size: 13px; color: var(--muted); }
 .plugin-stage { flex: 1; min-height: 0; background: #fff; }
 
 .market-page { flex: 1; min-height: 0; overflow: auto; }
@@ -136,7 +137,7 @@ h1, h2 { text-wrap: balance; }
   .auth-intro .brand-mark { background: var(--accent); color: #fff; }
   .auth-intro::after, .auth-story, .auth-caption { display: none; }
   .auth-panel { flex: 1; padding: 32px 28px 48px; }
-  .shell-context { display: none; }
+
   .publish-panel { grid-template-columns: 1fr; gap: 20px; }
 }
 
@@ -147,12 +148,7 @@ h1, h2 { text-wrap: balance; }
   .auth-content { margin: 0 auto; }
   .auth-content h1 { font-size: 27px; }
   .auth-form { margin-top: 28px; gap: 20px; }
-  .shell-header { min-height: 68px; padding: 12px 16px; gap: 12px; }
-  .shell-account { gap: 8px; }
-  .user-name { display: none; }
-  .shell-account .button { margin: 0; padding-inline: 8px; font-size: 12px; }
-  .plugin-toolbar { gap: 12px; padding-inline: 10px; }
-  .plugin-toolbar > .version { display: none; }
+ .shell-header { padding-inline: 10px; gap: 10px; }
   .market-content { padding: 28px 20px 20px; }
   .market-heading h1 { font-size: 27px; }
   .publish-panel { padding: 20px; }

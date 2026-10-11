@@ -3,6 +3,7 @@ import {
   manifestSchema,
   type BridgeMessage,
   type PluginClient,
+  type PluginMenuItem,
   type PluginManifest,
   type RequestOptions,
 } from '../src/index.js';
@@ -51,6 +52,9 @@ const messages: BridgeMessage[] = [
 ];
 
 async function useClient(client: PluginClient): Promise<string> {
+  const items: PluginMenuItem[] = [{ id: 'import', label: 'Import', file: { accept: '.txt', multiple: true }, onSelect: async files => { await files[0]?.text(); } }];
+  const unregister = client.registerMenu(items);
+  unregister();
   const note = await client.request<{ text: string }>('/notes', options);
   const unsubscribe = client.subscribe('/notes/events', (data: unknown) => void data);
   unsubscribe();

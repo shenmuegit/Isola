@@ -14,11 +14,34 @@ function Fixture() {
   const [extra, setExtra] = useState(false);
   const [selected, setSelected] = useState(false);
   const [output, setOutput] = useState('');
-  const mode = new URLSearchParams(location.search).get('mode');
+  const [fileCalls, setFileCalls] = useState(0);
+  const mode = new URLSearchParams(location.search).get('mode') ?? document.querySelector('meta[name="fixture-mode"]')?.getAttribute('content');
   const automatic = useRef<PluginClient | null>(null);
+  const cleanup = useRef<() => void>(() => {});
+  const oldCleanup = useRef<() => void>(() => {});
   useEffect(() => {
     if (earlyConnection) void earlyConnection.then(client => { automatic.current = client; setOutput('已连接'); }).catch(error => setOutput(error.message));
   }, [mode]);
+  if (mode === 'menu') return <Stack>
+    <button onClick={() => void connect().then(client => {
+      oldCleanup.current = cleanup.current;
+      cleanup.current = client.registerMenu([
+        { id: 'run', label: '执行菜单', onSelect: files => setOutput(`执行:${files.length}`) },
+        { id: 'file', label: '导入文件', file: { accept: '.txt', multiple: true }, onSelect: async files => { setOutput(`${files[0]!.name}:${await files[0]!.text()}`); setFileCalls(count => count + 1); } },
+        { id: 'disabled', label: '禁用菜单', disabled: true, onSelect: () => setOutput('不应执行') },
+        { id: 'error', label: '异步错误', onSelect: async () => { throw new Error('菜单失败'); } },
+        { id: 'sync', label: '同步错误', onSelect: () => { throw new Error('同步失败'); } },
+        { id: 'late', label: '延迟错误', onSelect: () => new Promise((_, reject) => setTimeout(() => reject(new Error('过期错误')), 400)) },
+      ]);
+    }).catch(error => setOutput(error.message))}>注册菜单</button>
+    <button onClick={() => void connect().then(client => { oldCleanup.current = cleanup.current; cleanup.current = client.registerMenu([{ id: 'run', label: '替换菜单', onSelect: () => setOutput('替换执行') }]); })}>替换注册</button>
+    <button onClick={() => void connect().then(client => { cleanup.current = client.registerMenu([{ id: 'file', label: '替换文件', file: { accept: '.txt' }, onSelect: files => setOutput(`新文件:${files[0]!.name}`) }]); })}>替换文件注册</button>
+    <button onClick={() => oldCleanup.current()}>旧清理</button>
+    <button onClick={() => cleanup.current()}>注销菜单</button>
+    <button onClick={() => window.dispatchEvent(new PageTransitionEvent('pagehide'))}>断开通道</button>
+    <output>{output}</output>
+    <p role="status">文件调用次数: {fileCalls}</p>
+  </Stack>;
   if (mode === 'form') return <form onSubmit={event => {
     event.preventDefault();
     const text = new FormData(event.currentTarget).get('text');

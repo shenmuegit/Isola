@@ -30,11 +30,13 @@ export function connect(): Promise<PluginClient> {
       const port = event.ports[0]!;
       let nextId = 0;
       let closed = false;
+      let menu: { id: string; items: Map<string, import('./protocol.js').PluginMenuItem> } | undefined;
       const requests = new Map<string, { resolve: (data: unknown) => void; reject: (error: Error) => void; timer: number }>();
       const subscriptions = new Map<string, (data: unknown) => void>();
       const close = () => {
         if (closed) return;
         closed = true;
+        menu = undefined;
         port.postMessage({ type: 'disconnect' } satisfies BridgeMessage);
         subscriptions.clear();
         for (const request of requests.values()) {
@@ -47,6 +49,19 @@ export function connect(): Promise<PluginClient> {
         window.removeEventListener('pagehide', close);
       };
       port.onmessage = ({ data }: MessageEvent<BridgeMessage>) => {
+        if (closed) return;
+        if (data?.type === 'disconnect') { close(); return; }
+        if (data?.type === 'menu-select') {
+          const current = menu;
+          const item = current?.id === data.id ? current.items.get(data.itemId) : undefined;
+          if (!item || item.disabled || !Array.isArray(data.files) || !data.files.every(file => file instanceof File) || (!item.file && data.files.length)) return;
+          void Promise.resolve().then(() => {
+            if (!closed && menu === current) return item.onSelect(data.files);
+          }).catch(error => {
+            if (!closed && menu === current) port.postMessage({ type: 'menu-error', id: current!.id, message: error instanceof Error ? error.message : String(error) } satisfies BridgeMessage);
+          });
+          return;
+        }
         if (data?.type === 'event') { subscriptions.get(data.id)?.(data.data); return; }
         if (data?.type !== 'result' && data?.type !== 'error') return;
         const request = requests.get(data.id);
@@ -60,6 +75,18 @@ export function connect(): Promise<PluginClient> {
       port.addEventListener('close', close);
       window.addEventListener('pagehide', close);
       resolve({
+        registerMenu(items) {
+          if (closed) throw new Error('Plugin connection closed');
+          const id = String(++nextId);
+          const entries = items.map(({ id, label, disabled, file }) => ({ id, label, disabled, file }));
+          port.postMessage({ type: 'menu-register', id, items: entries } satisfies BridgeMessage);
+          menu = { id, items: new Map(items.map(item => [item.id, { ...item }])) };
+          return () => {
+            if (closed || menu?.id !== id) return;
+            menu = undefined;
+            port.postMessage({ type: 'menu-unregister', id } satisfies BridgeMessage);
+          };
+        },
         request<T>(path: string, options?: RequestOptions): Promise<T> {
           if (closed) return Promise.reject(new Error('Plugin connection closed'));
           const id = String(++nextId);

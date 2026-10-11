@@ -13,7 +13,7 @@ pnpm --filter @isola/plugin build
 
 将 `examples/notes` 复制到 `examples/my-plugin`，修改 `package.json` 的 `name`、`version`、`description`、`isola.title` 和 `isola.server.image`，再从仓库根目录执行 `pnpm install`。`name` 唯一标识插件，镜像内也必须包含相同版本的 `package.json`。
 
-仓库外开发时，先在本仓库运行 `pnpm --dir packages/plugin pack`，得到 `packages/plugin/isola-plugin-0.1.0.tgz`。将模板的 `dependencies["@isola/plugin"]` 改为 `file:/实际绝对路径/isola-plugin-0.1.0.tgz`，再运行 `npm install`。SDK 包已包含 JS、类型、样式与 MIT LICENSE；无需从 npm 下载尚未发布的 SDK。
+仓库外开发时，先在本仓库运行 `pnpm --dir packages/plugin pack`，得到 `packages/plugin/isola-plugin-0.1.1.tgz`。将模板的 `dependencies["@isola/plugin"]` 改为 `file:/实际绝对路径/isola-plugin-0.1.1.tgz`，再运行 `npm install`。SDK 包已包含 JS、类型、样式与 MIT LICENSE；无需从 npm 下载尚未发布的 SDK。
 
 清单沿用 npm 格式：
 
@@ -86,6 +86,24 @@ const stop = client.subscribe('/events', event => console.log(event));
 ```
 
 `request<T>(path, options?)` 支持 `GET`（默认）、`POST`、`PUT`、`DELETE`。普通对象作为 JSON，`File` / `Blob` 保持浏览器原生请求体。JSON 响应作为结果，HTTP 204 返回 `undefined`，非成功 HTTP 状态拒绝 Promise。`subscribe(path, listener)` 通过 SSE 接收 JSON 数据，返回取消订阅函数。插件离开时内部通道发送 `disconnect`，宿主清理该通道的请求与订阅。
+
+SDK 0.1.1 增加 `registerMenu(items: PluginMenuItem[]): () => void`，API 版本仍为 1。宿主从当前用户的安装记录显示插件入口；插件只注册当前业务操作：
+
+```ts
+import type { PluginMenuItem } from '@isola/plugin';
+
+const items: PluginMenuItem[] = [
+  { id: 'new', label: '新建', onSelect: () => createNote() },
+  { id: 'import', label: '导入', file: { accept: '.md,.txt', multiple: true },
+    onSelect: async files => { for (const file of files) await importNote(file.name, await file.text()); } },
+];
+const unregister = client.registerMenu(items);
+// 组件卸载时调用 unregister()。
+```
+
+条目包含 `id`、`label`、可选 `disabled`、可选 `file: { accept: string; multiple?: boolean }` 及 `onSelect: (files: File[]) => void | Promise<void>`。每次注册替换当前菜单，旧注册的清理不会注销新菜单。普通操作收到 `[]`；文件操作由宿主菜单的原生文件输入取得 `File[]`，取消不调用，允许重选同一文件。函数留在插件内，只有条目数据经过绑定通道。同步和异步异常显示在宿主；替换或关闭后的旧选择与错误被忽略，断开及重载清除菜单。
+
+宿主只有一个标题栏；原生 Popover 内分别显示市场与安装入口、当前插件操作、用户名与退出登录。插件内容占用标题栏下方区域，模板不再重复显示应用标题。
 
 有后端时使用框架传入的 `DATABASE_URL` 访问独立插件 PostgreSQL 数据库。HTTP 监听 `PORT=3000`；业务查询按可信 `x-isola-user-id` 限定用户数据。直接沿用示例的原生事务初始化与 `/health`：先读取镜像内清单，核对 `ISOLA_PLUGIN_NAME` / `ISOLA_PLUGIN_VERSION`，初始化成功后由 `/health` 返回 `{ name, version, apiVersion }`。健康信息来自镜像内清单。
 
