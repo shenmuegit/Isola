@@ -103,7 +103,7 @@ const unregister = client.registerMenu(items);
 
 条目包含 `id`、`label`、可选 `disabled`、可选 `file: { accept: string; multiple?: boolean }` 及 `onSelect: (files: File[]) => void | Promise<void>`。每次注册替换当前菜单，旧注册的清理不会注销新菜单。普通操作收到 `[]`；文件操作由宿主菜单的原生文件输入取得 `File[]`，取消不调用，允许重选同一文件。函数留在插件内，只有条目数据经过绑定通道。同步和异步异常显示在宿主；替换或关闭后的旧选择与错误被忽略，断开及重载清除菜单。
 
-宿主只有一个标题栏；原生 Popover 内分别显示市场与安装入口、当前插件操作、用户名与退出登录。插件内容占用标题栏下方区域，模板不再重复显示应用标题。
+宿主只有一个标题栏；原生 Popover 内分别显示市场与安装入口、当前插件操作和退出登录。插件内容占用标题栏下方区域，模板不再重复显示应用标题。
 
 有后端时使用框架传入的 `DATABASE_URL` 访问独立插件 PostgreSQL 数据库。HTTP 监听 `PORT=3000`；业务查询按可信 `x-isola-user-id` 限定用户数据。直接沿用示例的原生事务初始化与 `/health`：先读取镜像内清单，核对 `ISOLA_PLUGIN_NAME` / `ISOLA_PLUGIN_VERSION`，初始化成功后由 `/health` 返回 `{ name, version, apiVersion }`。健康信息来自镜像内清单。
 

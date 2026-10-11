@@ -12,7 +12,7 @@ function Brand() {
   return <strong className="brand"><svg className="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M9 23V12h5v11zm0-16h5v3H9zm9 0h5v16h-5z" fill="currentColor" /></svg>Isola</strong>;
 }
 
-function Workspace({ user, onSignOut }: { user: { name: string }; onSignOut: () => Promise<void> }) {
+function Workspace({ onSignOut }: { onSignOut: () => Promise<void> }) {
   const [selected, setSelected] = useState<Release>();
   const [installed, setInstalled] = useState<Release[]>([]);
   const [items, setItems] = useState<PluginMenuItem[]>([]);
@@ -43,7 +43,7 @@ function Workspace({ user, onSignOut }: { user: { name: string }; onSignOut: () 
     <nav ref={menu} id="workspace-menu" className="workspace-menu" popover="auto" aria-label="工作空间导航">
       <div className="menu-group"><button onClick={() => navigate()}>{selected ? '返回市场' : '插件市场'}</button>{installed.map(release => <button key={release.manifest.name} disabled={release.manifest.isola.apiVersion !== PLUGIN_API_VERSION} aria-current={selected?.id === release.id ? 'page' : undefined} onClick={() => navigate(release)}>{release.manifest.isola.title}</button>)}</div>
       {items.length > 0 && <div className="menu-group" aria-label="当前插件操作"><PluginMenuActions items={items} onSelect={() => menu.current?.hidePopover()} /></div>}
-      <div className="menu-group"><span className="menu-user">{user.name}</span><button onClick={() => { menu.current?.hidePopover(); void onSignOut().catch(cause => setError(String(cause))); }}>退出登录</button></div>
+      <div className="menu-group"><button onClick={() => { menu.current?.hidePopover(); void onSignOut().catch(cause => setError(String(cause))); }}>退出登录</button></div>
     </nav>
     {loading && <p className="shell-status" role="status">正在读取已安装插件…</p>}
     {error && <p className="notice notice-error shell-error" role="alert">{error}<button className="text-button" onClick={() => setAttempt(value => value + 1)}>重试</button></p>}
@@ -72,7 +72,7 @@ export function App() {
   }
   return <div ref={root} className="app-root">
     {isPending ? <div className="session-loading"><Brand /><p role="status">正在读取会话…</p></div> : session ? <>
-      <Workspace key={session.user.id} user={session.user} onSignOut={async () => {
+      <Workspace key={session.user.id} onSignOut={async () => {
         const result = await auth.signOut();
         if (result.error) throw new Error(result.error.message ?? '退出失败');
       }} />

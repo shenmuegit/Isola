@@ -124,3 +124,11 @@ SDK 0.1.1 TGZ SHA-256 为 `d8e9169dcf3b9dc9b816ce8478e4b4d83149534f9f4b158ccd95b
 逐项结果、原生数据比较、清理结果和 `unified-menu-desktop.png`、`unified-menu-mobile.png` 在独立证据目录 `workdashboard-testing/isola-menu-20261011`，当前资源记录为 `preview-lifecycle.json`。文件取消由三引擎回归覆盖，真实预览验证了原文件交付和同文件重试。未重跑未变化的 Docker 服务端和布局全套检查，未运行原生设备测试。
 
 独立上下文复核通过本次框架 `9c46529..7dc6d54` 和 Grove `6ef9d01..e85d2f7` 源码变化，并核对定向测试、真实预览及数据证据，无 Critical、Important 或 Minor 发现。复核记录为证据目录中的 `task-1-review.md`。
+
+## 菜单用户名删除与画板原因排查
+
+按用户要求删除了统一菜单中的用户名行及其样式，保留退出登录和插件操作。类型检查、客户端构建及真实预览检查通过；现有核心服务仅更新 Web 产物，未重启服务或修改账号数据。
+
+对 Grove 0.1.5 当前构建产物的 Chromium 受控复现确认：滚轮 `deltaY=-1` 和 `deltaY=-120` 均只增加 `0.05` 缩放比例；每次有效缩放立即发送整个画板的保存请求，并在请求期间设置 `body.inert=true`。在测试专用 250ms 保存延迟下，保存中的第二次原生滚动没有改变比例。平移的两个连续指针移动都更新了变换，移动期间未写入；松手后保存也设置了 inert。由此定位到滚轮固定步长和保存期间交互禁用，而非此次菜单调整引入的画板 CSS 动画。
+
+本次仅排查画板原因，未修改 Grove 源码、插件版本或真实画板数据，未声明顺滑问题已修复或测得实际设备帧率。复现使用当前产物、空测试画板和独立临时 HTTP 服务；浏览器及服务已关闭。结果与源码副本保存在 `workdashboard-testing/isola-canvas-20261011` 的 `grove-canvas-reproduction.json`、`reproduce.mjs`，菜单截图为 `menu-without-username.png`。
