@@ -89,6 +89,10 @@ const stop = client.subscribe('/events', event => console.log(event));
 
 有后端时使用框架传入的 `DATABASE_URL` 访问独立插件 PostgreSQL 数据库。HTTP 监听 `PORT=3000`；业务查询按可信 `x-isola-user-id` 限定用户数据。直接沿用示例的原生事务初始化与 `/health`：先读取镜像内清单，核对 `ISOLA_PLUGIN_NAME` / `ISOLA_PLUGIN_VERSION`，初始化成功后由 `/health` 返回 `{ name, version, apiVersion }`。健康信息来自镜像内清单。
 
+框架在启动新建或已停止的插件后端前，暂时停止该插件正在运行的后端，禁止业务库新连接并终止已有会话，再用 PostgreSQL `TEMPLATE` 创建管理员持有、禁止连接的备份。已运行且健康的后端直接复用。启动或安装记录写入失败时，先移除候选容器，再恢复业务库及之前运行的后端；原安装记录保留。数据库设置、序列和对象所有权随原生副本恢复，数据库访问沿用框架的私有权限。
+
+备份保留到安装记录与 `plugins.backend_backup` 清除在同一事务提交后。恢复失败会返回保留副本名，并拒绝后续自动建库或启动，需管理员处理该副本和引用；成功提交后的副本清理失败只记录错误并保留副本。此验证覆盖安装过程中的可捕获故障，不代表进程崩溃或存储故障后的自动恢复。
+
 ## 4. 本地联调
 
 准备 Node.js 24、pnpm 10、Docker Engine 和 Compose。复制根目录 `.env.example` 为 `.env`，为 `PGPASSWORD` 和 `BETTER_AUTH_SECRET` 设置各自私有的随机值。`PGPASSWORD` 留空时 Compose 会明确报错；它供 PostgreSQL 初始化管理员角色及核心的 node-postgres 连接使用，无需把密码拼进 `DATABASE_URL`。插件只收到自己的受限数据库连接地址。在仓库根目录运行：

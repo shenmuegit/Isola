@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS plugins (
 
 ALTER TABLE plugins ADD COLUMN IF NOT EXISTS backend_database text;
 ALTER TABLE plugins ADD COLUMN IF NOT EXISTS backend_password text;
+ALTER TABLE plugins ADD COLUMN IF NOT EXISTS backend_backup text;
 
 CREATE TABLE IF NOT EXISTS releases (
   id uuid PRIMARY KEY,

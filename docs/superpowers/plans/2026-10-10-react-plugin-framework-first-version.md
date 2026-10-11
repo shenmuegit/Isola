@@ -8,7 +8,7 @@
 
 **Tech Stack:** Node.js 24、pnpm 10、TypeScript、React、Vite、Fastify、PostgreSQL、Docker、Tauri 2。会话接入使用 Better Auth 原生 Fastify 集成，归档使用 npm 打包格式和 node-tar；测试使用 Node 测试运行器及 Playwright。[^1][^2]
 
-**Spec:** [Isola 技术方案](../specs/2026-10-10-react-plugin-framework-design.md)。任务 1–7 的实现已提交；任务 4 的破坏性初始化恢复责任仍待确认。实际通过项与未完成项见[验收记录](../../acceptance.md)。
+**Spec:** [Isola 技术方案](../specs/2026-10-10-react-plugin-framework-design.md)。用户已确认任务 4 由框架备份并恢复失败初始化的数据；最小实现沿用原生 PostgreSQL 与 Docker。实际通过项与未完成项见[验收记录](../../acceptance.md)。
 
 ## 📋 全局约束
 
@@ -19,7 +19,7 @@
 - “开发者决定业务布局，客户端适配由框架负责。”
 - 客户端加载同一份插件前端产物，访问同一服务端业务数据；当前已验证 Web。
 - 业务布局通过公开组件组合，区域内部使用普通 React 内容；系统差异留在框架代码中，`ListDetail` 是可选组件。
-- 仅成功安装才写入安装记录；失败保留已有插件与业务数据的要求仍包括待用户决定的破坏性初始化 SQL 恢复责任。
+- 仅成功安装才写入安装记录；按用户确认的原生数据库备份恢复失败初始化已提交的破坏性 SQL，保留已有安装版本与业务数据。
 - 会话、容器、数据库权限、归档保护直接采用依赖的原生机制。
 
 Web 开发需要 Node.js 24、pnpm 10 与 Docker Engine/Compose。代码提交显式暂存本计划涉及的文件，保留其他工作区内容。
@@ -159,7 +159,7 @@ export declare function ListDetail(props: ListDetailProps): ReactElement;
 
 已实现安装记录、独立后端容器、插件 PostgreSQL 数据库/角色、业务请求和 SSE。每个插件使用原生 internal 网络连接核心、数据库与后端，后端另接普通 bridge 访问外部网络。同插件版本复用网络；数据与调用归属隔离已验证。
 
-**未完成：** 原要求是安装失败保留已有业务数据。普通失败测试通过；插件启动时已提交的破坏性 SQL 无法自动恢复，恢复责任待用户决定，不能将本要求标为通过。
+恢复实现沿用同插件 advisory lock：启动前停止原运行后端、禁用业务库连接并终止会话，用原生 `TEMPLATE` 建立受保护副本，复制数据库及角色在库设置。`plugins.backend_backup` 保存唯一待处理副本引用；安装记录与清除引用共用事务。启动或记录失败后，先移除候选，再原生恢复业务库及原运行后端；恢复失败保留副本并拒绝后续自动建库。验收覆盖破坏性初始化、安装记录失败、备份准备失败、原生恢复失败、候选移除失败和提交后清理失败，保留既有并发安装及跨用户旧版本测试。
 
 ### 任务 5：官方模板
 

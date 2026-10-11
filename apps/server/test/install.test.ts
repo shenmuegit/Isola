@@ -49,7 +49,7 @@ before(async () => {
     else { cookie = value; userId = response.json().user.id; }
   }
   await exec('docker', ['build', '-t', 'isola-test-backend', '-f', 'test/fixtures/backend/Dockerfile', '.']);
-  await exec('docker', ['build', '-t', 'isola-test-unhealthy', '--build-arg', 'HEALTH_VERSION=wrong', '-f', 'test/fixtures/backend/Dockerfile', '.']);
+  await exec('docker', ['build', '-t', 'isola-test-unhealthy', '--build-arg', 'HEALTH_VERSION=wrong', '--build-arg', 'DESTRUCTIVE_STARTUP=1', '-f', 'test/fixtures/backend/Dockerfile', '.']);
   await exec('docker', ['build', '-t', 'isola-test-unready', '--build-arg', 'HEALTH_VERSION=unready', '-f', 'test/fixtures/backend/Dockerfile', '.']);
   const publish = async (name: string, version: string, image?: string) => {
     const response = await app.inject({ method: 'POST', url: '/api/market/releases', headers: { cookie, 'content-type': 'application/octet-stream' }, payload: await npmPackage({ ...manifest, name, version, isola: { ...manifest.isola, ...(image ? { server: { image } } : {}) } }) });

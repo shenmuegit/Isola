@@ -2,7 +2,11 @@ import { createServer } from 'node:http';
 import { Pool } from 'pg';
 
 const db = new Pool({ connectionString: process.env.DATABASE_URL });
+process.on('SIGTERM', () => process.exit(0));
 await db.query('CREATE TABLE IF NOT EXISTS notes (user_id text PRIMARY KEY, body text NOT NULL)');
+if (process.env.DESTRUCTIVE_STARTUP) {
+  await db.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public; CREATE TABLE candidate_only (value text)');
+}
 let streams = 0;
 createServer(async (req, res) => {
   const url = new URL(req.url, 'http://plugin');
