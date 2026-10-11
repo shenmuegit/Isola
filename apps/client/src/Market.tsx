@@ -16,11 +16,12 @@ export function Market({ onOpen }: { onOpen: (release: Release) => void }) {
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
+  const [loading, setLoading] = useState(true);
   async function load() {
     const [releases, installations] = await Promise.all([request<Release[]>('/api/market/releases'), request<Release[]>('/api/installations')]);
     setReleases(releases); setInstalled(installations);
   }
-  useEffect(() => { void load().catch(cause => setError(cause.message)); }, []);
+  useEffect(() => { void load().catch(cause => setError(cause.message)).finally(() => setLoading(false)); }, []);
   async function publish(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const file = new FormData(event.currentTarget).get('package') as File;
@@ -39,17 +40,21 @@ export function Market({ onOpen }: { onOpen: (release: Release) => void }) {
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
     finally { setBusy(''); }
   }
-  return <main style={{ overflow: 'auto' }}>
-    <h1>插件市场</h1>
-    <form onSubmit={publish}><label>插件包<input name="package" type="file" accept=".tgz" required disabled={Boolean(busy)} /></label><button type="submit" disabled={Boolean(busy)}>发布</button></form>
-    {error && <p role="alert">{error}</p>}{status && <p role="status">{status}</p>}
-    {releases.map(release => {
+  return <main className="market-page"><div className="market-content">
+    <div className="market-heading"><h1>插件市场</h1><p>把需要的工具，带进你的工作空间。</p></div>
+    <section className="publish-panel" aria-labelledby="publish-heading"><div><h2 id="publish-heading">分享你的插件</h2><p>选择符合 Isola 规范的 .tgz 插件包。</p></div><form className="publish-form" onSubmit={publish}><label>插件包<input name="package" type="file" accept=".tgz" required disabled={Boolean(busy)} /></label><button className="button button-secondary" type="submit" disabled={Boolean(busy)}>{busy === 'publish' ? '正在发布…' : '发布'}</button></form></section>
+    {error && <p className="notice notice-error" role="alert">{error}</p>}{status && <p className="notice notice-success" role="status">{status}</p>}
+    {loading && <p className="market-empty" role="status">正在读取插件…</p>}
+    {!loading && !error && releases.length === 0 && <div className="market-empty"><h2>还没有插件</h2><p>发布第一个插件，开始建立你的工作空间。</p></div>}
+    <div className="plugin-grid">{releases.map(release => {
       const installation = installed.find(item => item.id === release.id);
       const compatible = release.manifest.isola.apiVersion === PLUGIN_API_VERSION;
-      return <article key={release.id} aria-label={`${release.manifest.isola.title} ${release.manifest.version}`}>
-        <h2>{release.manifest.isola.title} <small>{release.manifest.version}</small></h2><p>{release.manifest.description}</p>
-        {!compatible ? <p role="alert">插件接口版本 {release.manifest.isola.apiVersion} 与当前客户端接口版本 {PLUGIN_API_VERSION} 不兼容</p> : installation ? <button disabled={Boolean(busy)} onClick={() => onOpen(installation)}>打开</button> : <button disabled={Boolean(busy)} onClick={() => void install(release)}>{busy === release.id ? '安装中…' : '安装'}</button>}
+      return <article className="plugin-card" key={release.id} aria-label={`${release.manifest.isola.title} ${release.manifest.version}`}>
+        <div className="plugin-card-heading"><span className="plugin-initial" aria-hidden="true">{release.manifest.isola.title.slice(0, 1)}</span><div><h2>{release.manifest.isola.title}</h2><span className="version">{release.manifest.version}</span></div></div><p className="plugin-description">{release.manifest.description}</p>
+        <div className="plugin-card-footer">{installation ? <span className="installed-label">已安装</span> : <span />}{!compatible ? <p className="compatibility-error" role="alert">插件接口版本 {release.manifest.isola.apiVersion} 与当前客户端接口版本 {PLUGIN_API_VERSION} 不兼容</p> : installation ? <button className="button button-primary" disabled={Boolean(busy)} onClick={() => onOpen(installation)}>打开</button> : <button className="button button-secondary" disabled={Boolean(busy)} onClick={() => void install(release)}>{busy === release.id ? '安装中…' : '安装'}</button>}</div>
       </article>;
-    })}
+    })}</div>
+    <footer className="market-footer">Isola<span>你的工具，各有空间。</span></footer>
+  </div>
   </main>;
 }
