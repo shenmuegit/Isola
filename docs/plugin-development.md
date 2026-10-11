@@ -13,7 +13,7 @@ pnpm --filter @isola/plugin build
 
 将 `examples/notes` 复制到 `examples/my-plugin`，修改 `package.json` 的 `name`、`version`、`description`、`isola.title` 和 `isola.server.image`，再从仓库根目录执行 `pnpm install`。`name` 唯一标识插件，镜像内也必须包含相同版本的 `package.json`。
 
-仓库外开发时，先在本仓库运行 `pnpm --dir packages/plugin pack`，得到 `packages/plugin/isola-plugin-0.1.1.tgz`。将模板的 `dependencies["@isola/plugin"]` 改为 `file:/实际绝对路径/isola-plugin-0.1.1.tgz`，再运行 `npm install`。SDK 包已包含 JS、类型、样式与 MIT LICENSE；无需从 npm 下载尚未发布的 SDK。
+仓库外开发时，先在本仓库运行 `pnpm --dir packages/plugin pack`，得到 `packages/plugin/isola-plugin-0.1.1.tgz`。将该包复制到插件的 `vendor/` 目录并随源码保存，把模板的 `dependencies["@isola/plugin"]` 改为 `file:vendor/isola-plugin-0.1.1.tgz`，再运行 `npm install` 并保存锁文件。SDK 包已包含 JS、类型、样式与 MIT LICENSE；相对依赖使其他机器克隆插件后也能安装，无需从 npm 下载尚未发布的 SDK。
 
 清单沿用 npm 格式：
 
