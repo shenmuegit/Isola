@@ -1,6 +1,6 @@
 # 官方笔记示例 / 插件模板
 
-复制本目录即可开始编写插件，具体步骤见[插件开发指南](../../docs/plugin-development.md)。本示例用公开 `@isola/plugin` 通道访问业务后端，并用 `@isola/plugin/ui` 组合列表、编辑和操作区域。
+复制本目录即可开始编写插件，具体步骤见[插件开发指南](../../docs/plugin-development.md)，通用后端与数据库约定见[插件后端接入规范](../../docs/plugin-backend.md)。本示例用公开 `@isola/plugin` 通道访问业务后端，并用 `@isola/plugin/ui` 组合列表、编辑和操作区域。
 
 在仓库根目录运行：
 

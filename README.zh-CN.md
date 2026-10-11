@@ -123,6 +123,7 @@ cd Isola
 | --- | --- |
 | [技术方案](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md) | 客户端、服务端、插件交付、市场和适配责任 |
 | [布局接口](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md#插件自定义布局接口) | 可组合 React 布局及框架负责的自适应行为 |
+| [后端接入规范](docs/plugin-backend.md) | 镜像交付、SDK 请求、用户身份、PostgreSQL 归属及升级规则 |
 | [实施计划](docs/superpowers/plans/2026-10-10-react-plugin-framework-first-version.md) | 实施步骤和当前 Web 验收范围 |
 | [验收记录](docs/acceptance.md) | 已验证命令、浏览器用例及未解决项 |
 

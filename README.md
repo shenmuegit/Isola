@@ -123,6 +123,7 @@ cd Isola
 | --- | --- |
 | [Architecture](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md) | Clients, server, plugin delivery, marketplace, and adaptation responsibilities |
 | [Layout contract](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md#插件自定义布局接口) | Composable React layouts and framework-owned responsive behavior |
+| [Backend contract](docs/plugin-backend.md) | Plugin images, SDK requests, user identity, PostgreSQL ownership and upgrades |
 | [Implementation plan](docs/superpowers/plans/2026-10-10-react-plugin-framework-first-version.md) | Implementation steps and current Web acceptance scope |
 | [Acceptance](docs/acceptance.md) | Verified commands, browser cases and unresolved checks |
 
