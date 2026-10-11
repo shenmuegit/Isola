@@ -122,3 +122,5 @@ SDK 0.1.1 TGZ SHA-256 为 `d8e9169dcf3b9dc9b816ce8478e4b4d83149534f9f4b158ccd95b
 临时菜单插件及其发布目录、安装和唯一导入笔记已清理；最终市场只显示 Grove 0.1.5。原有 23 条笔记、24 个引用及其他业务字段指纹恢复一致，全图操作更新的画板视角单独保留；原笔记示例业务库指纹未变。核心服务与 PostgreSQL 未重启，0.1.5 后端运行，已无人安装的 0.1.4 测试后端已停止但容器与数据保留。原用户标签页刷新至登录页，临时验收页关闭。
 
 逐项结果、原生数据比较、清理结果和 `unified-menu-desktop.png`、`unified-menu-mobile.png` 在独立证据目录 `workdashboard-testing/isola-menu-20261011`，当前资源记录为 `preview-lifecycle.json`。文件取消由三引擎回归覆盖，真实预览验证了原文件交付和同文件重试。未重跑未变化的 Docker 服务端和布局全套检查，未运行原生设备测试。
+
+独立上下文复核通过本次框架 `9c46529..7dc6d54` 和 Grove `6ef9d01..e85d2f7` 源码变化，并核对定向测试、真实预览及数据证据，无 Critical、Important 或 Minor 发现。复核记录为证据目录中的 `task-1-review.md`。
