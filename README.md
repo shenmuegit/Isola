@@ -14,7 +14,7 @@
 
 <p>
   <a href="docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md">Architecture</a> ·
-  <a href="docs/superpowers/plans/2026-10-10-react-plugin-framework-first-version.md">Implementation plan</a> ·
+  <a href="docs/plugin-development.md">Plugin development</a> ·
   <a href="https://github.com/shenmuegit/Isola/issues">Discuss</a>
 </p>
 
@@ -22,12 +22,12 @@
 
 ---
 
-Isola is an open-source framework for community-built React plugins. The SDK, Web client, server, marketplace and official notes template are implemented. **Windows uses the Web client; current acceptance is Web only.**
+Isola is an open-source framework for community-built React plugins. It includes a public SDK, Web client, server, marketplace and official notes template. **Windows uses the same Web client.**
 
 Plugin authors define their tools and business layouts. Isola provides the common client environment, server integration, installation flow, and adaptation across its supported clients.
 
 > [!NOTE]
-> **Web development preview.** Real sessions, marketplace publishing, Docker installation, saving and reopening notes have passed browser acceptance. A minimal Tauri 2 shell configuration is included; native Windows, macOS and iPhone clients have not been built or run. The SDK is not published to npm. See [acceptance evidence and pending checks](docs/acceptance.md).
+> **Web development preview.** A minimal Tauri 2 shell configuration is included; native targets require platform-specific builds and device validation. The SDK is not published to npm. See the [acceptance guide](docs/acceptance.md) for test commands and expected behavior.
 
 Requires Node.js 24, pnpm 10, Docker Engine and Compose. Copy `.env.example` to `.env`, set private random values for `PGPASSWORD` and `BETTER_AUTH_SECRET`, then run:
 
@@ -46,7 +46,7 @@ Open `http://localhost:5173`, create an account, publish `examples/notes/isola-e
 | Regions, composition, and layout constraints | Reflow, scrolling, focus, and input behavior within the public component contract |
 | Optional server-side business logic | Installation and connection between plugin frontends and backends |
 
-Plugins target Isola's public SDK and use one frontend artifact. The framework maintains layout adaptation; verified browser coverage and unverified native targets are recorded separately.
+Plugins target Isola's public SDK and use one frontend artifact. The framework maintains layout adaptation; browser and native device validation use separate test environments.
 
 ## 🏗️ How the pieces fit
 
@@ -70,7 +70,7 @@ flowchart LR
     server -->|Business requests| backend
 ```
 
-The stack uses React, TypeScript, and Vite for the common interface, and Node.js, Fastify, PostgreSQL, and Docker for server-side integration. The Tauri 2 shell uses native URL configuration to load that same host; native execution remains unverified. Details and platform requirements are in the [architecture document](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md).
+The stack uses React, TypeScript, and Vite for the common interface, and Node.js, Fastify, PostgreSQL, and Docker for server-side integration. The Tauri 2 shell uses native URL configuration to load that same host. Details and platform requirements are in the [architecture document](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md).
 
 ## 🧩 Your plugin, your layout
 
@@ -108,7 +108,7 @@ export function NotesLayout({ list, editor, actions }: {
 }
 ```
 
-The author defines the structure once. Framework components adapt to the space their container provides, with stable React nodes during size changes. Current Web acceptance covers layouts and interactions within the public component contract.
+The author defines the structure once. Framework components adapt to the space their container provides, with stable React nodes during size changes.
 
 See the [layout interface and adaptation rules](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md#插件自定义布局接口) for types, defaults, examples, and acceptance criteria.
 
@@ -124,8 +124,8 @@ cd Isola
 | [Architecture](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md) | Clients, server, plugin delivery, marketplace, and adaptation responsibilities |
 | [Layout contract](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md#插件自定义布局接口) | Composable React layouts and framework-owned responsive behavior |
 | [Backend contract](docs/plugin-backend.md) | Plugin images, SDK requests, user identity, PostgreSQL ownership and upgrades |
-| [Implementation plan](docs/superpowers/plans/2026-10-10-react-plugin-framework-first-version.md) | Implementation steps and current Web acceptance scope |
-| [Acceptance](docs/acceptance.md) | Verified commands, browser cases and unresolved checks |
+| [Plugin development](docs/plugin-development.md) | Templates, local development, packaging and publishing |
+| [Acceptance](docs/acceptance.md) | Reproducible test commands and expected results |
 
 The detailed design documents are currently written in Simplified Chinese.
 
@@ -133,7 +133,7 @@ The detailed design documents are currently written in Simplified Chinese.
 
 Contributions are welcome. Useful work includes building plugins against the public SDK and reporting reproducible issues with validation results.
 
-Start with the [architecture](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md) and [implementation plan](docs/superpowers/plans/2026-10-10-react-plugin-framework-first-version.md). Use [issues](https://github.com/shenmuegit/Isola/issues) to discuss a focused proposal, or submit a [pull request](https://github.com/shenmuegit/Isola/pulls) with its purpose and validation results.
+Start with the [architecture](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md) and [plugin development guide](docs/plugin-development.md). Use [issues](https://github.com/shenmuegit/Isola/issues) to discuss a focused proposal, or submit a [pull request](https://github.com/shenmuegit/Isola/pulls) with its purpose and validation results.
 
 ## 📄 License
 

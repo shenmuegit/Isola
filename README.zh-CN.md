@@ -14,7 +14,7 @@
 
 <p>
   <a href="docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md">技术方案</a> ·
-  <a href="docs/superpowers/plans/2026-10-10-react-plugin-framework-first-version.md">实施计划</a> ·
+  <a href="docs/plugin-development.md">插件开发</a> ·
   <a href="https://github.com/shenmuegit/Isola/issues">参与讨论</a>
 </p>
 
@@ -22,12 +22,12 @@
 
 ---
 
-Isola 是一个开源 React 插件框架，已实现 SDK、Web 客户端、服务端、插件市场和官方笔记模板。**Windows 使用 Web 客户端，当前只验收 Web。**
+Isola 是一个开源 React 插件框架，提供 SDK、Web 客户端、服务端、插件市场和官方笔记模板。**Windows 使用同一 Web 客户端。**
 
 插件开发者决定业务功能和布局，框架负责共同运行环境、服务端接入、安装流程，以及支持客户端之间的适配。
 
 > [!NOTE]
-> **Web 开发预览。** 真实会话、市场发布、Docker 安装、笔记保存与重新打开已通过浏览器验收。仓库包含最小 Tauri 2 外壳配置；Windows、macOS、iPhone 原生客户端未构建或运行，SDK 尚未发布到 npm。详见[验收证据与未完成项](docs/acceptance.md)。
+> **Web 开发预览。** 仓库包含最小 Tauri 2 外壳配置；原生目标需要对应平台的构建和设备验证。SDK 尚未发布到 npm。测试命令与预期行为见[验收指南](docs/acceptance.md)。
 
 需要 Node.js 24、pnpm 10、Docker Engine 和 Compose。复制 `.env.example` 为 `.env`，为 `PGPASSWORD` 和 `BETTER_AUTH_SECRET` 设置各自私有的随机值后运行：
 
@@ -46,7 +46,7 @@ pnpm dev
 | 业务区域、组合方式与布局约束 | 公开组件约定内的排版、滚动、焦点和输入行为 |
 | 按需编写服务端业务逻辑 | 安装和插件前后端之间的接入 |
 
-插件按 Isola 公开 SDK 开发并交付同一份前端产物。布局适配由框架维护；浏览器通过项与未验证的原生目标分别记录。
+插件按 Isola 公开 SDK 开发并交付同一份前端产物。布局适配由框架维护，浏览器和原生设备使用各自的测试环境验证。
 
 ## 🏗️ 四部分如何配合
 
@@ -70,7 +70,7 @@ flowchart LR
     server -->|业务请求| backend
 ```
 
-技术栈使用 React、TypeScript、Vite 实现共用界面，Node.js、Fastify、PostgreSQL 和 Docker 提供服务端接入。Tauri 2 外壳通过原生 URL 配置加载同一宿主，原生运行仍未验证。具体机制和平台要求见[技术方案](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md)。
+技术栈使用 React、TypeScript、Vite 实现共用界面，Node.js、Fastify、PostgreSQL 和 Docker 提供服务端接入。Tauri 2 外壳通过原生 URL 配置加载同一宿主。具体机制和平台要求见[技术方案](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md)。
 
 ## 🧩 插件决定自己的业务布局
 
@@ -108,7 +108,7 @@ export function NotesLayout({ list, editor, actions }: {
 }
 ```
 
-插件声明一次业务结构，框架组件根据所在容器的实际空间适配，并在尺寸变化时保留稳定的 React 节点。当前 Web 验收覆盖遵守公开组件与交互约定的布局。
+插件声明一次业务结构，框架组件根据所在容器的实际空间适配，并在尺寸变化时保留稳定的 React 节点。
 
 完整类型、默认值、示例和验收要求见[布局接口与适配规则](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md#插件自定义布局接口)。
 
@@ -124,14 +124,14 @@ cd Isola
 | [技术方案](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md) | 客户端、服务端、插件交付、市场和适配责任 |
 | [布局接口](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md#插件自定义布局接口) | 可组合 React 布局及框架负责的自适应行为 |
 | [后端接入规范](docs/plugin-backend.md) | 镜像交付、SDK 请求、用户身份、PostgreSQL 归属及升级规则 |
-| [实施计划](docs/superpowers/plans/2026-10-10-react-plugin-framework-first-version.md) | 实施步骤和当前 Web 验收范围 |
-| [验收记录](docs/acceptance.md) | 已验证命令、浏览器用例及未解决项 |
+| [插件开发](docs/plugin-development.md) | 模板、本地联调、构建与发布方法 |
+| [验收指南](docs/acceptance.md) | 可复现的测试命令与预期结果 |
 
 ## 🤝 参与贡献
 
 欢迎社区参与。可以基于公开 SDK 开发插件，或提交带复现步骤和验证结果的问题。
 
-先阅读[技术方案](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md)和[实施计划](docs/superpowers/plans/2026-10-10-react-plugin-framework-first-version.md)，通过 [Issues](https://github.com/shenmuegit/Isola/issues) 讨论具体建议，或提交说明用途与验证结果的 [Pull Request](https://github.com/shenmuegit/Isola/pulls)。
+先阅读[技术方案](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md)和[插件开发指南](docs/plugin-development.md)，通过 [Issues](https://github.com/shenmuegit/Isola/issues) 讨论具体建议，或提交说明用途与验证结果的 [Pull Request](https://github.com/shenmuegit/Isola/pulls)。
 
 ## 📄 许可证
 

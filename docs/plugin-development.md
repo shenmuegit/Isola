@@ -109,7 +109,7 @@ const unregister = client.registerMenu(items);
 
 ### 将已有 React 项目接入框架
 
-已有项目按同一公开契约交付。下表整理 Grove 接入中已验证的做法，开发者负责业务页面和后端，框架负责宿主、插件切换和请求转发。
+已有项目按同一公开契约交付。开发者负责业务页面和后端，框架负责宿主、插件切换和请求转发。
 
 | 接入部分 | 开发者需要落实的内容 |
 | --- | --- |
@@ -121,11 +121,9 @@ const unregister = client.registerMenu(items);
 | 加载与保存 | 区分无记录与请求失败；如需初始示例，仅在无记录时显示，读取失败显示错误；保存失败保留草稿与重试所需的修改内容 |
 | 发布产物 | 递增插件版本，前端入口及所有资源随 TGZ 交付，镜像内清单与包一致；发布的产物包含本次实际构建的代码 |
 
-编辑器、画布和文件处理仍是插件业务。Grove 的滚轮实现按输入幅度计算缩放，通过浏览器原生 `requestAnimationFrame` 过渡，尊重减少动态效果设置；连续缩放期间保持交互，结束后沿用业务写入队列保存视角。其写入按发起顺序完成，失败保留未保存提示。这些行为由插件实现，并通过公开 SDK 保存。
-
 接入完成后，用真实市场安装产物验证：菜单打开及插件切换、同文件重选、导入原文、编辑保存及失败重试、刷新后重开，以及插件自身的布局与连续交互。带后端的数据迁移与隔离按[后端验收条件](plugin-backend.md#接入验收条件)验证。
 
-已完成实例见 [Grove 0.1.7 接入说明](https://github.com/shenmuegit/Grove/blob/71c210727660dad8fa40bbd39ec9fb4e5e586118/design-trials/grove-sites-prototype-20261008/PLUGIN.md)与[本项目验收记录](acceptance.md#grove-017-正式后端与数据库接入)。其中的画板、笔记引用与缩放是 Grove 的业务实现；通用接入使用本指南与后端规范定义的契约。
+完整代码示例见[官方笔记模板](../examples/notes/README.md)，市场和宿主的验证步骤见[验收指南](acceptance.md)。
 
 ## 4. 本地联调
 
@@ -190,10 +188,10 @@ curl --fail-with-body --cookie session.cookies \
 
 也可直接在宿主“插件市场”选择 `.tgz`，点击“发布”。发布成功后点击“安装”，完成后点击“打开”。同一插件以 `name` 为唯一标识，市场只显示一张卡片；已安装时显示当前版本，新版本通过同一张卡片的“更新”操作覆盖安装。成功后原安装记录指向新版本，失败保留原版本与数据。`session.cookies` 需由同一框架服务端的登录会话取得。发布成功返回 HTTP 201 和 release `id`；`GET /api/market/releases` 按 npm SemVer 列出每个插件的最新发布版本，已登录用户可向 `POST /api/installations` 发送 `{ "releaseId": "返回的 id" }` 安装。
 
-## 客户端配置与验证范围
+## 客户端配置
 
-当前只验收 Web，Windows 使用同一 Web 客户端。Grove 给定网页对应的原型已在独立测试副本中按公开规则接入；SDK 未发布到 npm。浏览器证据与未完成项见[验收记录](acceptance.md)。
+Web 和 Windows 使用同一 Web 客户端。浏览器与设备的验证方法见[验收指南](acceptance.md)。
 
-`apps/client/src-tauri` 由官方 Tauri 2 CLI 生成。外壳直接加载框架宿主：`build.devUrl` 为已验证的 `pnpm dev` 地址 `http://localhost:5173`，`build.frontendDist` 是本地核心服务 `http://localhost:3000`。前者用于开发，后者在发布构建时加载远程宿主，不将另一份插件前端打进外壳。
+`apps/client/src-tauri` 的 Tauri 2 外壳直接加载框架宿主：`build.devUrl` 为 `pnpm dev` 地址 `http://localhost:5173`，`build.frontendDist` 是本地核心服务 `http://localhost:3000`。前者用于开发，后者在发布构建时加载远程宿主，不将另一份插件前端打进外壳。
 
-部署时直接把 `tauri.conf.json` 中这两个 URL 改为目标服务地址，也可使用 Tauri 原生 `--config` 合并 JSON 配置。保持 URL 对应服务端已配置的会话来源。开发时先在仓库根运行 `pnpm dev`，外壳无需另起 Vite。原生工程使用生成的 Rust 2024/最低 Rust 1.90 约定；本次未运行原生构建或设备。详见官方 [URL 配置](https://v2.tauri.app/reference/config/#buildconfig)和[配置合并](https://v2.tauri.app/develop/configuration-files/#extending-the-configuration)。
+部署时直接把 `tauri.conf.json` 中这两个 URL 改为目标服务地址，也可使用 Tauri 原生 `--config` 合并 JSON 配置。保持 URL 对应服务端已配置的会话来源。开发时先在仓库根运行 `pnpm dev`，外壳无需另起 Vite。原生工程使用 Rust 2024、最低 Rust 1.90；构建与设备验证在对应平台完成。详见官方 [URL 配置](https://v2.tauri.app/reference/config/#buildconfig)和[配置合并](https://v2.tauri.app/develop/configuration-files/#extending-the-configuration)。

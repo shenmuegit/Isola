@@ -1,27 +1,14 @@
 # Isola 技术方案
 
-_2026-10-11 · 当前实现与已确认约定；实际通过项和未完成项见[验收记录](../../acceptance.md)。_
+## 📋 框架职责
 
-## 📋 当前事实与已确认要求
+Isola 是面向社区 React 插件的开源框架，提供公开 SDK、Web 宿主、登录会话、插件市场、Docker 后端安装及官方笔记模板。Windows 使用同一 Web 客户端；仓库包含 Tauri 外壳配置，原生客户端需要按目标平台另行构建与验证。SDK 尚未发布到 npm。
 
-Isola 已实现公开 SDK、Web 宿主、真实会话、插件市场、Docker 后端安装及官方笔记模板。当前只验收 Web，Windows 使用同一 Web 客户端。Tauri 共用外壳配置已生成；原生 Windows、macOS、iPhone 未构建或运行，SDK 未发布到 npm。Grove 给定网页对应的原型已在独立测试副本中按公开规则安装。
-
-用户已确认：
-
-- 项目开源，社区能够基于框架开发 React 插件。
-- 原目标包括 Web、Windows、macOS 和 iPhone，并提供对应服务端；当前验收已确认为 Web，Windows 使用 Web。
-- 插件开发者面向框架开发一次，客户端适配由框架维护者负责。
-- 插件遵守框架的导入与开发规则，符合规则后才能正确安装。
-- 用户从插件市场点击安装，安装完成后直接使用完整业务功能。
-- 框架提供统一页面结构、基础组件和公开能力，贡献者主要实现业务。
-- 框架定义插件规范，由插件作者适配规范；使用官方示例验证框架本身的能力。
-- 开发者决定业务布局，客户端适配由框架负责；当前验证范围为 Web。
-
-共用前端产物和服务端数据用于保持业务操作与结果一致；界面随容器可用空间调整。当前验证范围为验收记录中的浏览器，不代表原生四端已通过。
+插件开发者按公开规范编写一份 React 业务界面和可选后端，自行决定业务布局；框架维护者负责宿主、安装、请求转发和客户端适配。共用前端产物和服务端数据保持业务操作与结果一致，界面随容器可用空间调整。测试方法见[验收指南](../../acceptance.md)。
 
 ## 🏗️ 最小技术结构
 
-React Web 是共同前端，Windows 使用 Web。`apps/client/src-tauri` 是官方 Tauri 2 CLI 生成的共用外壳；原生构建和设备兼容性未验证。Tauri 本身提供桌面、移动目标及系统 WebView。[^1][^2]
+React Web 是共同前端，Windows 使用 Web。`apps/client/src-tauri` 是共用 Tauri 2 外壳配置。Tauri 提供桌面、移动目标及系统 WebView。[^1][^2]
 
 | 部分 | 使用技术 | 职责 |
 | --- | --- | --- |
@@ -62,7 +49,7 @@ flowchart TB
 
 ### 一份前端产物
 
-贡献者从官方模板编写 React 页面。模板负责 React 挂载、框架组件接入及构建配置，输出标准 HTML、JavaScript、CSS 和静态资源。客户端加载同一份产物，当前已验证 Web。
+贡献者从官方模板编写 React 页面。模板负责 React 挂载、框架组件接入及构建配置，输出标准 HTML、JavaScript、CSS 和静态资源。客户端加载同一份产物。
 
 插件前端在原生 `iframe` 中运行，使用 `sandbox="allow-scripts allow-forms"` 保持不透明源并允许标准表单。插件所有静态资源响应使用相同的 CSP sandbox，并允许沙盒跨源加载。[^5][^13]
 
@@ -89,21 +76,21 @@ flowchart TB
 
 ### 共用 React DOM
 
-Web（包括 Windows）在浏览器中运行插件。Tauri 外壳通过原生 `build.devUrl` / `build.frontendDist` 加载同一宿主；开发地址为 `http://localhost:5173`，本地构建宿主由核心服务在 `http://localhost:3000` 提供，部署时直接修改为实际服务 URL。原生系统 WebView 行为未验证。插件保持 React Web 的 DOM、CSS 和浏览器事件模型。
+Web（包括 Windows）在浏览器中运行插件。Tauri 外壳通过原生 `build.devUrl` / `build.frontendDist` 加载同一宿主；开发地址为 `http://localhost:5173`，本地构建宿主由核心服务在 `http://localhost:3000` 提供，部署时直接修改为实际服务 URL。插件保持 React Web 的 DOM、CSS 和浏览器事件模型。
 
-贡献者使用同一份 React 代码和同一份发布产物；当前浏览器引擎与通过结果见验收记录，尚未确定原生最低系统版本或验证签名。
+贡献者使用同一份 React 代码和同一份发布产物；浏览器与设备的验证方法见[验收指南](../../acceptance.md)。
 
 ### 统一标题栏与业务菜单
 
 宿主使用一个标题栏与原生 Popover，显示市场、当前用户已安装插件、当前插件业务操作和账号退出。安装记录由宿主与市场共用，安装成功按现有 `name` 替换入口；失败保留原入口，用户变化时清空旧状态并取消旧读取。
 
-SDK 0.1.1 在 API 版本 1 的绑定 MessageChannel 上增加 `registerMenu(items: PluginMenuItem[]): () => void`。条目为 `id`、`label`、`disabled?`、`file?: { accept: string; multiple?: boolean }`、`onSelect: (files: File[]) => void | Promise<void>`。宿主接收条目数据，函数留在插件；文件由宿主原生输入选择。注册替换、清理和迟到错误按注册标识处理，断开或重载清空菜单。实际预览升级结果单独记录在验收文档。
+SDK 0.1.1 在 API 版本 1 的绑定 MessageChannel 上提供 `registerMenu(items: PluginMenuItem[]): () => void`。条目为 `id`、`label`、`disabled?`、`file?: { accept: string; multiple?: boolean }`、`onSelect: (files: File[]) => void | Promise<void>`。宿主接收条目数据，函数留在插件；文件由宿主原生输入选择。注册替换、清理和迟到错误按注册标识处理，断开或重载清空菜单。
 
 ### 插件自定义布局接口
 
 插件作者决定业务区域、顺序、嵌套关系、期望宽度和相对占比，区域内部使用普通 React 内容。框架提供可组合的布局组件，并根据当前区域的实际可用空间处理排版和输入适配。
 
-相关实践已核对：Radix 将布局与内容、交互分开，提供接近 CSS 的布局属性；Every Layout 展示了按内容与容器约束组合自适应布局；Radix 的公开讨论也呈现了精简接口与布局自由度之间的权衡。以下接口据此采用组合式 React 组件、原生 CSS 属性名与长度单位；组件已由本项目实现。[^17][^18][^19]
+布局接口采用组合式 React 组件、原生 CSS 属性名与长度单位，参考 Radix 和 Every Layout 的布局方式。[^17][^18]
 
 `@isola/plugin/ui` 已导出以下公开 React 接口：
 
@@ -196,17 +183,17 @@ export function NotesLayout({ list, editor, actions }: {
 
 框架尺寸适配保持同一 React 树、组件位置和 key，区域显隐保持节点挂载，并正确处理可见区域焦点。编辑状态依照 React 原生规则保留。[^15]
 
-布局尺寸和区域组合通过上述公开属性表达；业务样式作用于区域内容，并保留框架布局节点的宽度、换行、滚动与焦点约定。当前通过项仅覆盖验收记录中的普通 React 内容、布局组件与公开调用能力。
+布局尺寸和区域组合通过上述公开属性表达；业务样式作用于区域内容，并保留框架布局节点的宽度、换行、滚动与焦点约定。
 
 ### 可见区域和输入
 
-框架客户端负责安全区域和实际可见高度，基础组件负责滚动、焦点、输入框及操作区域。浏览器测试已覆盖可见高度缩小后的输入和操作可达；真实软键盘、安全区域及触摸设备操作未验证。[^8][^9]
+框架客户端使用可见视口高度和 CSS 安全区域处理页面边界，基础组件负责滚动与焦点。真实软键盘和触摸输入需要设备验证。[^8][^9]
 
 文件选择使用标准 HTML 文件输入，插件使用浏览器提供的 `File` / `Blob` 等对象。业务接口直接接收文件内容。[^14]
 
 ### 平台能力的共同语义
 
-第一版公开能力采用 Web 标准与服务端 HTTP。`@isola/plugin` 导出 `connect`、`PluginManifest`、`manifestSchema`、`PLUGIN_API_VERSION`，以及 `RequestOptions`、`PluginClient`、`BridgeMessage` 类型。
+公开能力采用 Web 标准与服务端 HTTP。`@isola/plugin` 导出 `connect`、`PluginManifest`、`manifestSchema`、`PLUGIN_API_VERSION`，以及请求、菜单和通道类型，见[SDK 导出](../../../packages/plugin/src/index.ts)。
 
 需要执行命令、调用模型或持续运行任务的业务由插件服务端承担。客户端通过同一份业务接口访问确定的服务端资源，执行位置保持一致。
 
@@ -214,9 +201,7 @@ export function NotesLayout({ list, editor, actions }: {
 
 ### 数据一致
 
-需要跨设备保留的业务数据持久化在服务端。框架安装记录也保存在服务端，客户端连接后读取；当前已验证同一 Web 客户端保存、刷新并重新打开。
-
-这通过共同的数据来源实现。同一用户通过独立 Firefox 会话读取 Grove 同一安装版本与保存内容已验证。
+需要跨设备保留的业务数据持久化在服务端。框架安装记录也保存在服务端，客户端连接后读取。同一用户的不同客户端访问共同的数据来源；保存后刷新、重新打开和独立登录读取的验证步骤见[验收指南](../../acceptance.md)。
 
 ## 🖥️ 服务端与市场如何配合
 
@@ -243,7 +228,7 @@ Docker 按插件运行独立服务，使用独立 PostgreSQL 业务数据库与�
 5. 必需步骤成功后，服务端写入用户安装记录，客户端显示插件入口并加载前端。
 6. 插件通过框架调用接口访问对应后端，用户开始使用。
 
-依赖不足、框架接口不兼容或服务端初始化失败时，安装返回具体原因；只有成功完成的安装才写入安装记录。用户已确认由框架在启动前保留业务库副本，启动失败后恢复。新建或已停止的后端启动前，在同插件 PostgreSQL advisory lock 内停止旧后端、禁用数据库连接并终止会话，再创建管理员持有且禁止连接的原生 `TEMPLATE` 副本；已运行且健康的后端直接复用。副本保留至安装记录与 `plugins.backend_backup` 清除在同一事务提交。启动或记录失败时先成功移除候选容器，再恢复业务库、设置、私有权限及原有运行后端。恢复失败保留副本与引用，并拒绝后续自动建库或启动；提交后副本清理失败记录错误，不回滚已提交安装。
+依赖不足、框架接口不兼容或服务端初始化失败时，安装返回具体原因；只有成功完成的安装才写入安装记录。新建或已停止的后端启动前，在同插件 PostgreSQL advisory lock 内停止旧后端、禁用数据库连接并终止会话，再创建管理员持有且禁止连接的原生 `TEMPLATE` 副本；已运行且健康的后端直接复用。副本保留至安装记录与 `plugins.backend_backup` 清除在同一事务提交。启动或记录失败时先成功移除候选容器，再恢复业务库、设置、私有权限及原有运行后端。恢复失败保留副本与引用，并拒绝后续自动建库或启动；提交后副本清理失败记录错误，不回滚已提交安装。
 
 导入检查用于确认结构和运行条件。完整业务功能由真实场景验收证明，入口存在和服务启动不能替代业务验收。
 
@@ -259,7 +244,7 @@ Docker 按插件运行独立服务，使用独立 PostgreSQL 业务数据库与�
 4. 运行 `pnpm dev` 构建产物并启动 Compose 与 Vite，在 `http://localhost:5173` 实际发布、安装和打开插件。
 5. 使用模板构建配置生成发布产物，发布到插件市场。
 
-模板、组件和调用接口随框架接口版本一起维护。插件业务测试由贡献者编写；框架维护者负责框架验收。统一开发命令已在 Linux Node/Docker 环境实际通过启动、市场业务和停止保留数据验证；Windows 原生子进程取消与退出竞态通过 4 项检查，这些不是原生客户端验收。
+模板、组件和调用接口随框架接口版本一起维护。插件业务测试由贡献者编写；框架维护者负责宿主、布局组件、市场、安装和通道的验收。
 
 ## ✅ 与目标对应的验收
 
@@ -267,17 +252,17 @@ Docker 按插件运行独立服务，使用独立 PostgreSQL 业务数据库与�
 | --- | --- |
 | 一次开发 | 贡献者交付同一份 React 源码和同一份前端产物；客户端差异处理位于框架 |
 | 自定义布局 | 同一插件可声明单列、多列与嵌套布局；区域顺序、期望宽度和占比按公开接口生效 |
-| Web 安装使用 | 当前只验收 Web，Windows 使用 Web；原生 macOS、iPhone 未验证 |
+| Web 安装使用 | 浏览器中通过市场发布、安装、打开插件并完成业务操作；Windows 使用同一 Web 客户端 |
 | 布局和输入 | 宽窄屏、嵌套、字体放大及缩放下保持区域可达；鼠标、触摸、键盘、软键盘和安全区域下操作可用，尺寸适配不重建编辑节点或丢失草稿 |
 | 前后端配合 | 用户安装后能实际完成业务请求，服务端依赖由框架安装与部署入口处理 |
-| 数据保留 | 同一 Web 客户端保存后刷新并重新打开，以及独立 Firefox 会话读取 Grove 同一安装版本与保存内容均已验证 |
+| 数据保留 | 保存后刷新并重新打开，另一个独立浏览器会话登录同一账号后读取相同安装版本与业务记录 |
 | 安装失败 | 不兼容或后端失败有具体错误，已有插件和业务数据保留 |
 | 社区代码边界 | 插件不能取得宿主用户凭据或其他插件数据库权限；伪造插件标识不能改变请求归属 |
 | 市场使用 | 用户能浏览、安装并直接打开插件，安装记录与运行的版本一致 |
 
 官方示例插件自行组合公开布局组件，验证创建、编辑、保存并重新打开记录、接收服务端事件，以及在不同可用宽度下保留编辑状态。布局测试同时覆盖纯组合布局和可选 `ListDetail`。示例按框架公开规范编写，作为贡献者开发模板的实际参照。
 
-浏览器页面缩放、真实软键盘和安全区域，以及原生客户端均未验证。Playwright WebKit 不等同于 Safari 或 iPhone 真机；业务库恢复验证覆盖安装过程中的可捕获故障，未验证进程崩溃或存储故障后的自动恢复。详见[验收记录](../../acceptance.md)。
+浏览器引擎测试、页面缩放、真实软键盘、安全区域和原生客户端分别验证。业务库安装失败恢复以可捕获故障为验收场景。具体步骤见[验收指南](../../acceptance.md)。
 
 [^1]: Tauri. [What is Tauri?](https://v2.tauri.app/start/)
 [^2]: Tauri. [Webview versions](https://v2.tauri.app/reference/webview-versions/)
@@ -296,5 +281,4 @@ Docker 按插件运行独立服务，使用独立 PostgreSQL 业务数据库与�
 [^16]: MDN. [Mastering wrapping of flex items](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_flexible_box_layout/Mastering_wrapping_of_flex_items)
 [^17]: Radix Themes. [Layout](https://www.radix-ui.com/themes/docs/overview/layout)
 [^18]: Every Layout. [The Sidebar](https://every-layout.dev/layouts/sidebar/)
-[^19]: Radix Themes community. [Layout API ergonomics discussion](https://github.com/radix-ui/themes/discussions/96)
 [^20]: React. [Applying CSS styles](https://react.dev/reference/react-dom/components/common#applying-css-styles)
