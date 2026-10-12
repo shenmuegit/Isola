@@ -14,7 +14,7 @@
 
 <p>
   <a href="docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md">技术方案</a> ·
-  <a href="docs/plugin-development.md">插件开发</a> ·
+  <a href="docs/plugin-development.md">插件接入规范</a> ·
   <a href="https://github.com/shenmuegit/Isola/issues">参与讨论</a>
 </p>
 
@@ -123,8 +123,7 @@ cd Isola
 | --- | --- |
 | [技术方案](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md) | 客户端、服务端、插件交付、市场和适配责任 |
 | [布局接口](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md#插件自定义布局接口) | 可组合 React 布局及框架负责的自适应行为 |
-| [后端接入规范](docs/plugin-backend.md) | 镜像交付、SDK 请求、用户身份、PostgreSQL 归属及升级规则 |
-| [插件开发](docs/plugin-development.md) | 模板、本地联调、构建与发布方法 |
+| [插件接入规范](docs/plugin-development.md) | React 布局、SDK、后端镜像、数据库、本地联调与发布 |
 | [验收指南](docs/acceptance.md) | 可复现的测试命令与预期结果 |
 
 ## 🤝 参与贡献

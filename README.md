@@ -14,7 +14,7 @@
 
 <p>
   <a href="docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md">Architecture</a> ·
-  <a href="docs/plugin-development.md">Plugin development</a> ·
+  <a href="docs/plugin-development.md">Plugin integration</a> ·
   <a href="https://github.com/shenmuegit/Isola/issues">Discuss</a>
 </p>
 
@@ -123,8 +123,7 @@ cd Isola
 | --- | --- |
 | [Architecture](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md) | Clients, server, plugin delivery, marketplace, and adaptation responsibilities |
 | [Layout contract](docs/superpowers/specs/2026-10-10-react-plugin-framework-design.md#插件自定义布局接口) | Composable React layouts and framework-owned responsive behavior |
-| [Backend contract](docs/plugin-backend.md) | Plugin images, SDK requests, user identity, PostgreSQL ownership and upgrades |
-| [Plugin development](docs/plugin-development.md) | Templates, local development, packaging and publishing |
+| [Plugin integration](docs/plugin-development.md) | React layouts, SDK, backend images, databases, local development and publishing |
 | [Acceptance](docs/acceptance.md) | Reproducible test commands and expected results |
 
 The detailed design documents are currently written in Simplified Chinese.
